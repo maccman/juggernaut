@@ -1,0 +1,15 @@
+# Client
+
+var jug = new Juggernaut;
+jug.subscribe("channel_name", function(data){
+  console.log("Got data: " + data);
+});
+
+# Server
+
+Juggernaut.publish("channel_name", {:some => "data"})
+
+Requires:
+ * node-static
+ * socket.io
+ * redis-client
