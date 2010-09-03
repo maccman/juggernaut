@@ -1,9 +1,12 @@
 # Client
 
-var jug = new Juggernaut;
-jug.subscribe("channel_name", function(data){
-  console.log("Got data: " + data);
-});
+<script src="application.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" charset="utf-8">
+  var jug = new Juggernaut;
+  jug.subscribe("channel_name", function(data){
+    console.log("Got data: " + data);
+  });
+</script>
 
 # Server
 

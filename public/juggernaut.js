@@ -1,7 +1,7 @@
 // For sprockets:
 // 
 //= require <json>
-//= require <socket.io>
+//= require <socket_io>
 
 io.path = null;
 if ("WebSocket" in window)
