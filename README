@@ -4,7 +4,7 @@ Juggernaut lets you push data to browser, which means you can do awesome
 things like multiplayer gaming, chat, realtime collaboration and more!
 
 Juggernaut is super simple and easy to get going. 
-Juggernaut 2, which is a completely rewrite, is build on node.js, is insanely fast, and can scale horizontally to millions of clients.
+Juggernaut 2, which is a completely rewrite, is built on node.js, is insanely fast, and can scale horizontally to millions of clients.
 
 ## Features
   * node.js server
@@ -66,9 +66,16 @@ Other requirements:
 >> node server.js
 >> open http://localhost:8080
 
+Start the server using root if you want Flash support. It needs to open a restricted port.
+
 ## Daemonize
 
 http://kevin.vanzonneveld.net/techblog/article/run_nodejs_as_a_service_on_ubuntu_karmic/
+
+# Scaling
+
+Just create more Juggernaut daemons. Put a TCP load balancer in front of them.
+Make sure they all connect to the same Redis instance.
 
 ## Usage case - Group Chat
 
