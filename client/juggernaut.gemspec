@@ -5,23 +5,24 @@
 
 Gem::Specification.new do |s|
   s.name = %q{juggernaut}
-  s.version = "2.0.0"
+  s.version = "2.0.0.beta1"
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Alex MacCaw"]
   s.date = %q{2010-09-03}
   s.description = %q{Use Juggernaut to easily implement realtime chat, collaboration, gaming and much more!}
   s.email = %q{info@eribium.org}
   s.extra_rdoc_files = [
-    "LICENSE",
-     "README"
+    "README"
   ]
   s.files = [
     ".document",
      ".gitignore",
      "LICENSE",
+     "README",
      "Rakefile",
      "VERSION",
+     "juggernaut.gemspec",
      "lib/juggernaut.rb"
   ]
   s.homepage = %q{http://github.com/maccman/juggernaut}
@@ -29,9 +30,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{Simple realtime push}
-  s.test_files = [
-    "examples/model_observer.rb"
-  ]
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION

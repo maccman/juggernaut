@@ -1,5 +1,5 @@
-class ModelObserver < ActiveRecord::Observer
-  observe :activity
+class JuggernautObserver < ActiveRecord::Observer
+  observe :activity, :user
   
   def after_create(rec)
     publish(:create, rec)
@@ -16,8 +16,9 @@ class ModelObserver < ActiveRecord::Observer
   protected
     def publish(type, rec)
       Juggernaut.publish(
-        Array(rec.sync_clients).map {|c| "sync/#{c}" }, 
-        {:type => type, :id => rec.id, :record => rec}
+        Array(rec.sync_clients).map {|c| "/sync/#{c}" }, 
+        {:type => type, :id => rec.id, 
+         :klass => rec.class.name, :record => rec}
       )
     end
 end
