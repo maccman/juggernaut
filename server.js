@@ -1,2 +1,2 @@
-Juggernaut = require("./index.js");
+Juggernaut = require("./index");
 Juggernaut.listen();
