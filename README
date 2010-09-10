@@ -35,15 +35,14 @@ Juggernaut.publish(["channel1", "channel2"], "foo")
 
 ## Requirements
 
+ * Node.js
+ * Redis
+ * Ruby
+ 
 node.js requirements:
  * socket.io
  * node-static
  * redis-client
- 
-Other requirements:
- * redis
- * ruby
- * redis ruby gem (sudo gem install redis)
  
 ## Installation
  
@@ -51,20 +50,26 @@ Other requirements:
  * Install npm
    >> curl http://npmjs.org/install.sh | sudo sh
  * Install socket.io
-   >> sudo npm install http://github.com/LearnBoost/Socket.IO-node/tarball/master
+   >> sudo npm install socket.io
  * Install node-static
    >> sudo npm install http://github.com/cloudhead/node-static/tarball/master
  * Install redis-client
-   >> sudo npm install http://github.com/technoweenie/redis-node-client/tarball/master
- * Install the juggernaut gem
+   >> sudo npm install http://github.com/technoweenie/redis-node-client/tarball/npm
+ * Install Redis - http://code.google.com/p/redis/
+ * Install the Juggernaut gem (optional):
    >> sudo gem install juggernaut --pre
 
 ## Running
 
+Start Redis
 >> ./redis-server redis.conf
+
+Download Juggernaut, and start the Juggernaut server:
+>> git clone git://github.com/maccman/juggernaut.git
 >> cd juggernaut
 >> node server.js
->> open http://localhost:8080
+
+That's it! Now go to http://localhost:8080/ to see Juggernaut in action.
 
 Start the server using root if you want Flash support. It needs to open a restricted port.
 
@@ -75,7 +80,7 @@ http://kevin.vanzonneveld.net/techblog/article/run_nodejs_as_a_service_on_ubuntu
 # Scaling
 
 Just create more Juggernaut daemons. Put a TCP load balancer in front of them.
-Make sure they all connect to the same Redis instance.
+Make sure they all connect to the same Redis instance. Use sticky sessions.
 
 ## Usage case - Group Chat
 
