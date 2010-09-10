@@ -92,6 +92,7 @@ Juggernaut.fn.trigger = function(){
 };
 
 Juggernaut.fn.onconnect = function(){
+  this.sessionID = this.socket.transport.sessionid;
   this.state = "connected";
   this.trigger("connect");
 };

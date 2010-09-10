@@ -10,8 +10,8 @@ module Juggernaut
     @redis = val
   end
 
-  def publish(channels, data)
-    message = {:channels => Array(channels), :data => data}
+  def publish(channels, data, options = {})
+    message = ({:channels => Array(channels), :data => data}).merge(options)
     redis.publish(:juggernaut, message.to_json) 
   end
 
