@@ -19,7 +19,6 @@ var Juggernaut = function(host, port, options){
   this.socket = new io.Socket(this.host, 
     {rememberTransport: false, port: this.port}
   );
-  this.socket.connect();  
   
   this.socket.on("connect",    this.proxy(this.onconnect));
   this.socket.on("message",    this.proxy(this.onmessage));
