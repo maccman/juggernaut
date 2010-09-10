@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{juggernaut}
-  s.version = "2.0.0.beta1"
+  s.version = "2.0.0.beta2"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Alex MacCaw"]
-  s.date = %q{2010-09-03}
+  s.date = %q{2010-09-10}
   s.description = %q{Use Juggernaut to easily implement realtime chat, collaboration, gaming and much more!}
   s.email = %q{info@eribium.org}
   s.extra_rdoc_files = [
@@ -18,10 +18,11 @@ Gem::Specification.new do |s|
   s.files = [
     ".document",
      ".gitignore",
-     "LICENSE",
      "README",
      "Rakefile",
      "VERSION",
+     "examples/juggernaut_observer.js",
+     "examples/juggernaut_observer.rb",
      "juggernaut.gemspec",
      "lib/juggernaut.rb"
   ]
