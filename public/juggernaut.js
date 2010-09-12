@@ -9,12 +9,13 @@ if ("WebSocket" in window)
 
 var Juggernaut = function(host, port, options){
   this.host = host || "localhost";
-  this.port = 8080;
+  this.port = port || 8080;
   
   this.options = options || {};
   
   this.handlers = {};
   this.state    = "disconnected";
+  this.meta     = this.options.meta;
   
   this.socket = new io.Socket(this.host, 
     {rememberTransport: false, port: this.port}
@@ -23,6 +24,8 @@ var Juggernaut = function(host, port, options){
   this.socket.on("connect",    this.proxy(this.onconnect));
   this.socket.on("message",    this.proxy(this.onmessage));
   this.socket.on("disconnect", this.proxy(this.ondisconnect));
+  
+  this.on("connect", this.proxy(this.writeMeta));
 };
 
 // Helper methods
@@ -89,6 +92,14 @@ Juggernaut.fn.trigger = function(){
   
   for(var i=0, len = callbacks.length; i < len; i++)
     callbacks[i].apply(this, args);
+};
+
+Juggernaut.fn.writeMeta = function(){
+  if ( !this.meta ) return;
+  var message     = new Juggernaut.Message;
+  message.type    = "meta";
+  message.data    = this.meta;
+  this.write(message);
 };
 
 Juggernaut.fn.onconnect = function(){

@@ -19,3 +19,5 @@ task :build do
   tempfile.close
   FileUtils.mv(tempfile.path, APP_PATH)
 end
+
+task :default => :build
