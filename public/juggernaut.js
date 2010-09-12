@@ -118,7 +118,7 @@ Juggernaut.fn.ondisconnect = function(){
 
 Juggernaut.fn.onmessage = function(data){
   var message = Juggernaut.Message.fromJSON(data);
-  this.trigger("message", message);
+  this.trigger("message", message);  
   this.trigger("data", message.channel, message.data);
   this.trigger(message.channel + ":data", message.data);
 };
