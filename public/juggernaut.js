@@ -8,7 +8,7 @@ if ("WebSocket" in window)
   WebSocket.__swfLocation = "/WebSocketMain.swf";
 
 var Juggernaut = function(host, port, options){
-  this.host = host || "localhost";
+  this.host = host || window.location.host;
   this.port = port || 8080;
   
   this.options = options || {};
