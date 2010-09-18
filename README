@@ -48,16 +48,16 @@ node.js requirements:
  
  * Install node.js - http://nodejs.org/
  * Install npm
-   >> curl http://npmjs.org/install.sh | sudo sh
+   >> curl http://npmjs.org/install.sh | sh
  * Install socket.io
-   >> sudo npm install socket.io
+   >> npm install socket.io
  * Install node-static
-   >> sudo npm install http://github.com/cloudhead/node-static/tarball/master
+   >> npm install http://github.com/cloudhead/node-static/tarball/master
  * Install redis-client
-   >> sudo npm install http://github.com/technoweenie/redis-node-client/tarball/npm
+   >> npm install http://github.com/technoweenie/redis-node-client/tarball/npm
  * Install Redis - http://code.google.com/p/redis/
  * Install the Juggernaut gem (optional):
-   >> sudo gem install juggernaut --pre
+   >> gem install juggernaut --pre
 
 ## Running
 
