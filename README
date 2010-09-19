@@ -71,7 +71,16 @@ Download Juggernaut, and start the Juggernaut server:
 
 That's it! Now go to http://localhost:8080/ to see Juggernaut in action.
 
+## Flash
+
+Flash is optional, but it's the default fallback for Firefox (until the beta is released).
+
 Start the server using root if you want Flash support. It needs to open a restricted port.
+
+Also, you need to specify the location of WebSocketMain.swf
+
+Either copy it to your public root, or set the address like this:
+  window.WEB_SOCKET_SWF_LOCATION = "http://youraddess:8080/WebSocketMain.swf"
 
 ## Daemonize
 
