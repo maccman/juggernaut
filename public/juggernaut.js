@@ -84,7 +84,9 @@ Juggernaut.fn.subscribe = function(channel, callback){
 // Private
 
 Juggernaut.fn.trigger = function(){
-  var args  = [].splice.call(arguments, 0);
+  var args = [];
+  for (var f=0; f < arguments.length; f++) args.push(arguments[f]);
+  
   var name  = args.shift();
 
   var callbacks = this.handlers[name];

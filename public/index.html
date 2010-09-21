@@ -17,38 +17,34 @@
       width: 400px;
     }
   </style>
-  
-  <script type="text/javascript" charset="utf-8">
-    window.addEventListener("load", function(){
-      
-      var logElement = document.getElementById("log");
-      logElement.value = "";
-      var log = function(data){
-        logElement.value += (data + "\n");
-      };
-      
-      var jug = new Juggernaut;
-      
-      jug.on("connect", function(){ log("Connected") });
-      jug.on("disconnect", function(){ log("Disconnected") });
-      jug.on("reconnect", function(){ log("Reconnecting") });
-      
-      log("Subscribing to channel1");
-      
-      jug.subscribe("channel1", function(data){
-        log("Got data: " + data);
-      });
-      
-      // Expose for debugging
-      window.jug = jug;
-      
-    }, false);
-  </script>
 </head>
 <body>
 
   <h1>Juggernaut - Hello World!</h1>
   
   <textarea id="log" readonly></textarea>
+  
+  <script type="text/javascript" charset="utf-8">
+    var logElement = document.getElementById("log");
+    logElement.value = "";
+    var log = function(data){
+      logElement.value += (data + "\n");
+    };
+    
+    var jug = new Juggernaut;
+    
+    jug.on("connect", function(){ log("Connected") });
+    jug.on("disconnect", function(){ log("Disconnected") });
+    jug.on("reconnect", function(){ log("Reconnecting") });
+    
+    log("Subscribing to channel1");
+    
+    jug.subscribe("channel1", function(data){
+      log("Got data: " + data);
+    });
+    
+    // Expose for debugging
+    window.jug = jug;
+  </script>
 </body>
 </html>
