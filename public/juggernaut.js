@@ -53,7 +53,7 @@ Juggernaut.fn.write = function(message){
 };
 
 Juggernaut.fn.connect = function(){
-  if (this.state == "connected") return;
+  if (this.state == "connected" || this.state == "connecting") return;
 
   this.state = "connecting";
   this.socket.connect();
