@@ -3,22 +3,22 @@
 //= require <json>
 //= require <socket_io>
 
-io.path = null;
-if ("WebSocket" in window)
-  WebSocket.__swfLocation = "/WebSocketMain.swf";
+if (typeof window != 'undefined'){
+	WEB_SOCKET_SWF_LOCATION = '/WebSocketMain.swf';
+}
 
-var Juggernaut = function(host, port, options){
-  this.host = host || window.location.hostname;
-  this.port = port || 8080;
-
+var Juggernaut = function(options){
   this.options = options || {};
+  
+  this.host = this.options.host || window.location.hostname;
+  this.port = this.options.port || 8080;
 
   this.handlers = {};
   this.state    = "disconnected";
   this.meta     = this.options.meta;
 
   this.socket = new io.Socket(this.host,
-    {rememberTransport: false, port: this.port}
+    {rememberTransport: false, port: this.port, secure: this.options.secure}
   );
 
   this.socket.on("connect",    this.proxy(this.onconnect));

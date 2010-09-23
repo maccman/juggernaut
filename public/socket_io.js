@@ -11,17 +11,17 @@ this.io = {
 	version: '0.6',
 	
 	setPath: function(path){
+		if (window.console && console.error) console.error('io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf');
 		this.path = /\/$/.test(path) ? path : path + '/';
-		
-		// this is temporary until we get a fix for injecting Flash WebSocket javascript files dynamically,
-		// as io.js shouldn't be aware of specific transports.
-		if ('WebSocket' in window){
-			WebSocket.__swfLocation = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
-		}
+		WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
 	}
 };
 
 if ('jQuery' in this) jQuery.io = this.io;
+
+if (typeof window != 'undefined'){
+	WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
+}
 /**
  * Socket.IO client
  * 
@@ -230,10 +230,17 @@ if ('jQuery' in this) jQuery.io = this.io;
 (function(){
 	
 	var empty = new Function,
+	    
+	XMLHttpRequestCORS = (function(){
+		if (!('XMLHttpRequest' in window)) return false;
+		// CORS feature detection
+		var a = new XMLHttpRequest();
+		return a.withCredentials != undefined;
+	})(),
 	
 	request = function(xdomain){
 		if ('XDomainRequest' in window && xdomain) return new XDomainRequest();
-		if ('XMLHttpRequest' in window) return new XMLHttpRequest();		
+		if ('XMLHttpRequest' in window && (!xdomain || XMLHttpRequestCORS)) return new XMLHttpRequest();
 		if (!xdomain){
 			try {
 				var a = new ActiveXObject('MSXML2.XMLHTTP');
@@ -323,7 +330,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 		var req = request(this.base._isXDomain());
 		if (multipart) req.multipart = true;
 		req.open(method || 'GET', this._prepareUrl() + (url ? '/' + url : ''));
-		if (method == 'POST'){
+		if (method == 'POST' && 'setRequestHeader' in req){
 			req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded; charset=utf-8');
 		}
 		return req;
@@ -331,7 +338,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	XHR.check = function(xdomain){
 		try {
-			if (request()) return true;
+			if (request(xdomain)) return true;
 		} catch(e){}
 		return false;
 	};
@@ -395,7 +402,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	WS.check = function(){
 		// we make sure WebSocket is not confounded with a previously loaded flash WebSocket
-		return 'WebSocket' in window && !('__initialize' in WebSocket);
+		return 'WebSocket' in window && WebSocket.prototype && ( WebSocket.prototype.send && !!WebSocket.prototype.send.toString().match(/native/i)) && typeof WebSocket !== "undefined";
 	};
 
 	WS.xdomainCheck = function(){
@@ -421,6 +428,22 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	Flashsocket.prototype.type = 'flashsocket';
 	
+	Flashsocket.prototype.connect = function(){
+		var self = this, args = arguments;
+		WebSocket.__addTask(function(){
+			io.Transport.websocket.prototype.connect.apply(self, args);
+		});
+		return this;
+	};
+	
+	Flashsocket.prototype.send = function(){
+		var self = this, args = arguments;
+		WebSocket.__addTask(function(){
+			io.Transport.websocket.prototype.send.apply(self, args);
+		});
+		return this;
+	};
+	
 	Flashsocket.prototype._onClose = function(){
 		if (!this.base.connected){
 			// something failed, we might be behind a proxy, so we'll try another transport
@@ -433,7 +456,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	Flashsocket.check = function(){
-		if (!('path' in io)) throw new Error('The `flashsocket` transport requires that you call io.setPath() with the path to the socket.io client dir.');
+		if (typeof WebSocket == 'undefined' || !('__addTask' in WebSocket)) return false;
 		if (io.util.opera) return false; // opera is buggy with this transport
 		if ('navigator' in window && 'plugins' in navigator && navigator.plugins['Shockwave Flash']){
 			return !!navigator.plugins['Shockwave Flash'].description;
@@ -550,7 +573,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	XHRMultipart.check = function(){
-		return 'XMLHttpRequest' in window && 'multipart' in XMLHttpRequest.prototype;
+		return 'XMLHttpRequest' in window && 'prototype' in XMLHttpRequest && 'multipart' in XMLHttpRequest.prototype;
 	};
 
 	XHRMultipart.xdomainCheck = function(){
@@ -768,7 +791,9 @@ JSONPPolling.xdomainCheck = function(){
 					timeout: 25000
 				}
 			},
-			rememberTransport: false
+			connectTimeout: 5000,
+			tryTransportsOnConnectTimeout: true,
+			rememberTransport: true
 		};
 		for (var i in options) 
 			if (this.options.hasOwnProperty(i))
@@ -780,10 +805,10 @@ JSONPPolling.xdomainCheck = function(){
 		if (!this.transport && 'console' in window) console.error('No transport available');
 	};
 	
-	Socket.prototype.getTransport = function(){
-		var transports = this.options.transports, match;
-		if (this.options.rememberTransport){
-			match = this.options.document.cookie.match('(?:^|;)\\s*socket\.io=([^;]*)');
+	Socket.prototype.getTransport = function(override){
+		var transports = override || this.options.transports, match;
+		if (this.options.rememberTransport && !override){
+			match = this.options.document.cookie.match('(?:^|;)\\s*socketio=([^;]*)');
 			if (match) transports = [decodeURIComponent(match[1])];
 		} 
 		for (var i = 0, transport; transport = transports[i]; i++){
@@ -801,6 +826,24 @@ JSONPPolling.xdomainCheck = function(){
 			if (this.connecting) this.disconnect();
 			this.connecting = true;
 			this.transport.connect();
+			if (this.options.connectTimeout){
+				var self = this;
+				setTimeout(function(){
+					if (!self.connected){
+						self.disconnect();
+						if (self.options.tryTransportsOnConnectTimeout){
+							var remainingTransports = [], transports = self.options.transports;
+							for (var i = 0, transport; transport = transports[i]; i++){
+								if (transport != self.transport.type) remainingTransports.push(transport);
+							}
+							if (remainingTransports.length){
+								self.transport = self.getTransport(remainingTransports);
+								self.connect();
+							}
+						}
+					}
+				}, this.options.connectTimeout)
+			}
 		}
 		return this;
 	};
@@ -859,7 +902,7 @@ JSONPPolling.xdomainCheck = function(){
 		this.connected = true;
 		this.connecting = false;
 		this._doQueue();
-		if (this.options.rememberTransport) this.options.document.cookie = 'socket.io=' + encodeURIComponent(this.transport.type);
+		if (this.options.rememberTransport) this.options.document.cookie = 'socketio=' + encodeURIComponent(this.transport.type);
 		this.fire('connect');
 	};
 	
@@ -868,13 +911,11 @@ JSONPPolling.xdomainCheck = function(){
 	};
 	
 	Socket.prototype._onDisconnect = function(){
+		var wasConnected = this.connected;
 		this.connected = false;
 		this.connecting = false;
 		this._queueStack = [];
-		
-    // @maccman edit - fire disconnect event
-    // even if we were never connected
-		this.fire('disconnect');
+		if (wasConnected) this.fire('disconnect');
 	};
 	
 	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
@@ -1817,7 +1858,7 @@ ASProxy.prototype =
     swfobject.embedSWF(
       WEB_SOCKET_SWF_LOCATION, "webSocketFlash",
       "1" /* width */, "1" /* height */, "9.0.0" /* SWF version */,
-      null, {bridgeName: "webSocket"}, {hasPriority: true}, null,
+      null, {bridgeName: "webSocket"}, {hasPriority: true, allowScriptAccess: "always"}, null,
       function(e) {
         if (!e.success) console.error("[WebSocket] swfobject.embedSWF failed");
       }
@@ -1872,3 +1913,4 @@ ASProxy.prototype =
   }
   
 })();
+

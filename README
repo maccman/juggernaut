@@ -17,6 +17,7 @@ Juggernaut 2, which is a completely rewrite, is built on node.js, is insanely fa
     * XHR with multipart encoding
     * XHR with long-polling
   * Reconnection support 
+  * SSL support
 
 ## Subscribe (JavaScript)
 
@@ -50,7 +51,7 @@ node.js requirements:
  * Install npm
    >> curl http://npmjs.org/install.sh | sh
  * Install socket.io
-   >> npm install socket.io
+   >> npm install http://github.com/maccman/Socket.IO-node/tarball/master
  * Install node-static
    >> npm install http://github.com/cloudhead/node-static/tarball/master
  * Install redis-client
@@ -81,6 +82,21 @@ Also, you need to specify the location of WebSocketMain.swf
 
 Either copy it to your public root, or set the address like this:
   window.WEB_SOCKET_SWF_LOCATION = "http://youraddess:8080/WebSocketMain.swf"
+  
+## SSL
+
+Juggernaut has SSL support! To activate, just put create a folder called 'keys' in the 'juggernaut' dir, 
+containing your privatekey.pem and certificate.pem files. 
+
+>> mkdir keys
+>> cd keys
+>> openssl genrsa -out privatekey.pem 1024 
+>> openssl req -new -key privatekey.pem -out certrequest.csr 
+>> openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.pem
+
+Then, pass the secure option to Juggernaut:
+  
+   var juggernaut = new Juggernaut({secure: true})
 
 ## Daemonize
 
