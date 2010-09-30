@@ -51,7 +51,7 @@ node.js requirements:
  * Install npm
    >> curl http://npmjs.org/install.sh | sh
  * Install socket.io
-   >> npm install http://github.com/maccman/Socket.IO-node/tarball/master
+   >> npm install socket.io
  * Install node-static
    >> npm install http://github.com/cloudhead/node-static/tarball/master
  * Install redis-client
