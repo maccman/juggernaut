@@ -109,6 +109,7 @@ Make sure they all connect to the same Redis instance. Use sticky sessions.
 
 ## Usage case - Group Chat
 
+<script src="http://localhost:8080/application.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" charset="utf-8">
   var jug = new Juggernaut;
   jug.subscribe("/chats", function(data){
@@ -122,6 +123,7 @@ Juggernaut.publish("/chats", params[:body])
 
 ## Usage case - Private Chat
 
+<script src="http://localhost:8080/application.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" charset="utf-8">
   var jug = new Juggernaut;
   jug.subscribe("/chats/<%= current_user.id %>", function(data){
