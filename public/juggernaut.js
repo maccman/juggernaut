@@ -81,6 +81,16 @@ Juggernaut.fn.subscribe = function(channel, callback){
   }
 };
 
+Juggernaut.fn.unsubscribe = function(channel) {
+  if ( !channel ) throw "Must provide a channel";
+  
+  var message     = new Juggernaut.Message;
+  message.type    = "unsubscribe";
+  message.channel = channel;
+
+  this.write(message);
+};
+
 // Private
 
 Juggernaut.fn.trigger = function(){
