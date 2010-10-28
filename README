@@ -55,7 +55,7 @@ node.js requirements:
  * Install node-static
    >> npm install http://github.com/cloudhead/node-static/tarball/master
  * Install redis-client
-   >> npm install http://github.com/technoweenie/redis-node-client/tarball/npm
+   >> npm install http://github.com/maccman/redis-node-client/tarball/master
  * Install Redis - http://code.google.com/p/redis/
  * Install the Juggernaut gem (optional):
    >> gem install juggernaut --pre
