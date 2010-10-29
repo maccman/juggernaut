@@ -40,11 +40,6 @@ Juggernaut.publish(["channel1", "channel2"], "foo")
  * Redis
  * Ruby
  
-node.js requirements:
- * socket.io
- * node-static
- * redis-client
- 
 ## Setup
  
  * Install node.js - http://nodejs.org/
