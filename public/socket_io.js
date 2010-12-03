@@ -20,7 +20,8 @@ this.io = {
 if ('jQuery' in this) jQuery.io = this.io;
 
 if (typeof window != 'undefined'){
-	WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
+  // WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
+  WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
 }
 /**
  * Socket.IO client
@@ -63,7 +64,13 @@ if (typeof window != 'undefined'){
 
 		isArray: function(obj){
 			return Object.prototype.toString.call(obj) === '[object Array]';
-		}
+		},
+		
+    merge: function(target, additional){
+      for (var i in additional)
+        if (additional.hasOwnProperty(i))
+          target[i] = additional[i];
+    }
 
 	};
 
@@ -107,9 +114,7 @@ if (typeof window != 'undefined'){
 		this.options = {
 			timeout: 15000 // based on heartbeat interval default
 		};
-		for (var i in options) 
-			if (this.options.hasOwnProperty(i))
-				this.options[i] = options[i];
+		io.util.merge(this.options, options);
 	};
 
 	Transport.prototype.send = function(){
@@ -145,7 +150,7 @@ if (typeof window != 'undefined'){
 				if (data.substr(i, 1) == n){
 					number += n;
 				} else {	
-					data = data.substr(number.length + frame.length)
+					data = data.substr(number.length + frame.length);
 					number = Number(number);
 					break;
 				} 
@@ -303,13 +308,13 @@ if (typeof window != 'undefined'){
 			}
 		};
 		this._sendXhr.send('data=' + encodeURIComponent(data));
-	},
+	};
 	
 	XHR.prototype.disconnect = function(){
 		// send disconnection signal
 		this._onDisconnect();
 		return this;
-	}
+	};
 	
 	XHR.prototype._onDisconnect = function(){
 		if (this._xhr){
@@ -377,12 +382,12 @@ if (typeof window != 'undefined'){
 	};
 	
 	WS.prototype.send = function(data){
-		this.socket.send(this._encode(data));
+		if (this.socket) this.socket.send(this._encode(data));
 		return this;
-	}
+	};
 	
 	WS.prototype.disconnect = function(){
-		this.socket.close();
+		if (this.socket) this.socket.close();
 		return this;
 	};
 	
@@ -442,17 +447,6 @@ if (typeof window != 'undefined'){
 			io.Transport.websocket.prototype.send.apply(self, args);
 		});
 		return this;
-	};
-	
-	Flashsocket.prototype._onClose = function(){
-		if (!this.base.connected){
-			// something failed, we might be behind a proxy, so we'll try another transport
-			this.base.options.transports.splice(io.util.indexOf(this.base.options.transports, 'flashsocket'), 1);
-			this.base.transport = this.base.getTransport();
-			this.base.connect();
-			return;
-		}
-		return io.Transport.websocket.prototype._onClose.call(this);
 	};
 	
 	Flashsocket.check = function(){
@@ -517,12 +511,14 @@ if (typeof window != 'undefined'){
 		var script = doc.getElementsByTagName('script')[0];
 		script.parentNode.removeChild(script);
 	};
-	
-	HTMLFile.prototype._destroy = function(){
-		this._iframe.src = 'about:blank';
-		this._doc = null;
-		CollectGarbage();
-	};
+
+  HTMLFile.prototype._destroy = function(){
+    if (this._iframe){
+      this._iframe.src = 'about:blank';
+      this._doc = null;
+      CollectGarbage();
+    }
+  };
 	
 	HTMLFile.prototype.disconnect = function(){
 		this._destroy();
@@ -795,9 +791,7 @@ JSONPPolling.xdomainCheck = function(){
 			tryTransportsOnConnectTimeout: true,
 			rememberTransport: true
 		};
-		for (var i in options) 
-			if (this.options.hasOwnProperty(i))
-				this.options[i] = options[i];
+		io.util.merge(this.options, options);
 		this.connected = false;
 		this.connecting = false;
 		this._events = {};
@@ -809,7 +803,10 @@ JSONPPolling.xdomainCheck = function(){
 		var transports = override || this.options.transports, match;
 		if (this.options.rememberTransport && !override){
 			match = this.options.document.cookie.match('(?:^|;)\\s*socketio=([^;]*)');
-			if (match) transports = [decodeURIComponent(match[1])];
+			if (match){
+				this._rememberedTransport = true;
+				transports = [decodeURIComponent(match[1])];
+			}
 		} 
 		for (var i = 0, transport; transport = transports[i]; i++){
 			if (io.Transport[transport] 
@@ -831,7 +828,7 @@ JSONPPolling.xdomainCheck = function(){
 				setTimeout(function(){
 					if (!self.connected){
 						self.disconnect();
-						if (self.options.tryTransportsOnConnectTimeout){
+						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
 							var remainingTransports = [], transports = self.options.transports;
 							for (var i = 0, transport; transport = transports[i]; i++){
 								if (transport != self.transport.type) remainingTransports.push(transport);
@@ -842,7 +839,7 @@ JSONPPolling.xdomainCheck = function(){
 							}
 						}
 					}
-				}, this.options.connectTimeout)
+				}, this.options.connectTimeout);
 			}
 		}
 		return this;
@@ -1289,7 +1286,7 @@ FABridge.prototype =
     // accepts a type structure, returns a constructed type
     addTypeDataToCache: function(typeData)
     {
-        newType = new ASProxy(this, typeData.name);
+        var newType = new ASProxy(this, typeData.name);
         var accessors = typeData.accessors;
         for (var i = 0; i < accessors.length; i++)
         {
@@ -1649,16 +1646,21 @@ ASProxy.prototype =
   };
 
   WebSocket.prototype.close = function() {
-    if (!this.__flash) return;
-    this.readyState = this.__flash.getReadyState();
-    if (this.readyState != WebSocket.OPEN) return;
-    this.__flash.close();
+    var self = this;
+    if (!self.__flash) return;
+    self.readyState = self.__flash.getReadyState();
+    if (self.readyState == WebSocket.CLOSED || self.readyState == WebSocket.CLOSING) return;
+    self.__flash.close();
     // Sets/calls them manually here because Flash WebSocketConnection.close cannot fire events
     // which causes weird error:
     // > You are trying to call recursively into the Flash Player which is not allowed.
-    this.readyState = WebSocket.CLOSED;
-    if (this.__timer) clearInterval(this.__timer);
-    if (this.onclose) this.onclose();
+    self.readyState = WebSocket.CLOSED;
+    if (self.__timer) clearInterval(self.__timer);
+    if (self.onclose) {
+       // Make it asynchronous so that it looks more like an actual
+       // close event
+       setTimeout(self.onclose, 1);
+     }
   };
 
   /**
@@ -1913,4 +1915,3 @@ ASProxy.prototype =
   }
   
 })();
-
