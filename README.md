@@ -43,21 +43,38 @@ Juggernaut 2, which is a completely rewrite, is built on node.js, is insanely fa
  
 ## Setup
 
-* Install node.js - http://nodejs.org/
-* Install Redis - http://code.google.com/p/redis/
-* Install the Juggernaut gem (optional) - (gem install juggernaut)
+###Install [Node.js](http://nodejs.org)
 
-## Running
+    wget http://nodejs.org/dist/node-v0.2.4.tar.gz
+    tar -xzvf node-v0.2.4.tar.gz
+    cd node-v0.2.4
+    ./configure
+    make
+    sudo make install
+
+###Install [Redis](http://code.google.com/p/redis)
+
+    wget http://redis.googlecode.com/files/redis-2.0.3.tar.gz
+    tar -xzvf redis-2.0.3.tar.gz
+    cd redis-2.0.3
+    make
+
+###Install the [Juggernaut](http://rubygems.org/gems/juggernaut) gem (optional)
+
+    gem install juggernaut
+
+##Running
 
 Start Redis
 
-    >> ./redis-server redis.conf
+    cd redis-2.0.3
+    ./redis-server redis.conf
 
 Download Juggernaut, and start the Juggernaut server:
 
-    >> git clone git://github.com/maccman/juggernaut.git --recursive
-    >> cd juggernaut
-    >> node server.js
+    git clone git://github.com/maccman/juggernaut.git --recursive
+    cd juggernaut
+    node server.js
 
 That's it! Now go to [http://localhost:8080](http://localhost:8080) to see Juggernaut in action.
 
