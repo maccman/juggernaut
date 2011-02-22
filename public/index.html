@@ -33,7 +33,7 @@
       logElement.value += (data + "\n");
     };
     
-    var jug = new Juggernaut();
+    var jug = new Juggernaut({secure: ('https:' == document.location.protocol)});
     
     jug.on("connect", function(){ log("Connected") });
     jug.on("disconnect", function(){ log("Disconnected") });
