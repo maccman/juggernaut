@@ -71,7 +71,7 @@ Start Redis
     cd redis-2.0.3
     ./redis-server redis.conf
 
-Download Juggernaut, and start the Juggernaut server:
+Download Juggernaut, and start the Juggernaut server. Remember to give Git the `--recursive` option, we need to download all the submodules too.
 
     git clone git://github.com/maccman/juggernaut.git --recursive
     cd juggernaut
