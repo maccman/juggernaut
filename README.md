@@ -46,36 +46,41 @@ Supported browsers are:
 
 ###Install [Node.js](http://nodejs.org)
 
-    wget http://nodejs.org/dist/node-v0.2.4.tar.gz
-    tar -xzvf node-v0.2.4.tar.gz
-    cd node-v0.2.4
-    ./configure
-    make
-    sudo make install
+If you're using the [Brew](http://mxcl.github.com/homebrew) package management system, use that:
+
+    brew install node
+
+Or follow the [Node build instructions](https://github.com/joyent/node/wiki/Installation)
 
 ###Install [Redis](http://code.google.com/p/redis)
 
-    wget http://redis.googlecode.com/files/redis-2.0.3.tar.gz
-    tar -xzvf redis-2.0.3.tar.gz
-    cd redis-2.0.3
-    make
+If you're using the Brew package, use that:
 
-###Install the [Juggernaut](http://rubygems.org/gems/juggernaut) gem (optional)
+    brew install redis
+    
+Or follow the [Redis build instructions](http://redis.io/download)
+
+###Install Juggernaut
+
+Juggernaut is distributed by [npm](http://npmjs.org), you'll need to [install that](http://npmjs.org) first if you haven't already.
+
+    npm install juggernaut
+
+###Install the [Juggernaut client gem](http://rubygems.org/gems/juggernaut)
+
+This step is optional, but if you're planning on using Juggernaut with Ruby, you'll need the gem.
 
     gem install juggernaut
 
 ##Running
 
-Start Redis
+Start Redis:
+  
+    redis-server
 
-    cd redis-2.0.3
-    ./redis-server redis.conf
+Start Juggernaut:
 
-Download Juggernaut, and start the Juggernaut server. Remember to give Git the `--recursive` option, we need to download all the submodules too.
-
-    git clone git://github.com/maccman/juggernaut.git --recursive
-    cd juggernaut
-    node server.js
+    juggernaut
 
 That's it! Now go to [http://localhost:8080](http://localhost:8080) to see Juggernaut in action.
 
@@ -116,8 +121,7 @@ That's pretty much the gist of it, the two methods - publish and subscribe. Coul
 Adobe Flash is optional, but it's the default fallback for a lot of browsers until WebSockets are supported.
 However, Flash needs a XML policy file to be served from port 843, which is restricted. You'll need to run Juggernaut with root privileges in order to open that port.
 
-    cd juggernaut
-    sudo node server.js
+    sudo juggernaut
     
 You'll also need to specify the location of WebSocketMain.swf. Either copy this file (from Juggernaut's public directory) to the root public directory of your application, or specify it's location before instantiating Juggernaut:
 
@@ -258,14 +262,14 @@ You don't have to use Ruby to communicate with Juggernaut. In fact, all that is 
 
 Similar to the Python example, we can use a Node.js Redis adapter to publish to Juggernaut.
 
-    var redis   = require("redis-client");
+    var redis   = require("redis");
 
     var msg = {
       "channels": ["channel1"],
       "data": "foo"
     };
 
-    var client  = redis.createClient();
+    var client = redis.createClient();
     client.publish("juggernaut", JSON.stringify(msg));
 
 ##Building a Roster
