@@ -1,6 +1,6 @@
 { "name" : "juggernaut"
 , "description" : "Realtime PubSub server push."
-, "version" : "2.0.2"
+, "version" : "2.0.3"
 , "author" : "maccman"
 , "licenses" :
   [ { "type" : "MIT"
