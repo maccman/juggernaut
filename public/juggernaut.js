@@ -91,6 +91,20 @@ Juggernaut.fn.unsubscribe = function(channel) {
   this.write(message);
 };
 
+Juggernaut.fn.publish = function() {
+  var args = [].slice.call(arguments);
+  var data = args.pop();
+  if (args.length === 0) throw "Must provide a channel";
+  if (typeof data === "undefined") throw "Must provide data";
+
+  var message      = new Juggernaut.Message;
+  message.type     = "publish";
+  message.channels = args;
+  message.data     = data;
+
+  this.write(message);
+}
+
 // Private
 
 Juggernaut.fn.trigger = function(){

@@ -114,6 +114,15 @@ The publish method also takes an array of channels, in case you want to send a m
 
     Juggernaut.publish(["channel1", "channel2"], ["foo", "bar"])
 
+You can now also publish from the client side. The API is the same as the Ruby client:
+
+    <script type="text/javascript" charset="utf-8">
+      var jug = new Juggernaut;
+      jug.publish("channel1", "Some data");
+      jug.publish("channel1", {some: "data"});
+      jug.publish(["channel1", "channel2"], ["foo", "bar"]);
+    </script>
+
 That's pretty much the gist of it, the two methods - publish and subscribe. Couldn't be easier than that!
 
 ##Flash
