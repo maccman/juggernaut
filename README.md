@@ -1,4 +1,4 @@
-#Juggeranut
+#Juggernaut
 
 Juggernaut gives you a realtime connection between your servers and client browsers. 
 You can literally push data to clients using your web application, which lets you do awesome things like multiplayer gaming, chat, group collaboration and more. 
