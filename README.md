@@ -394,4 +394,4 @@ So, as to the JavaScript side to the observer, we need to subscribe to a observe
 
 ##Full examples
 
-You can see the full examples inside [Holla](http://github.com/maccman/holla), specifically [roster.rb](http://github.com/maccman/holla/blob/master/app/models/roster.rb),  [juggernaut_observer.rb](http://github.com/maccman/holla/blob/master/app/observers/juggernaut_observer.rb) and [application.juggernaut.js](http://github.com/maccman/holla/blob/master/app/javascripts/application.juggernaut.js).
+You can see the full examples inside [Holla](http://github.com/maccman/holla), specifically [roster.rb](https://github.com/maccman/holla/blob/original/app/models/roster.rb),  [juggernaut_observer.rb](https://github.com/maccman/holla/blob/original/app/observers/juggernaut_observer.rb) and [application.juggernaut.js](https://github.com/maccman/holla/blob/original/app/javascripts/application.juggernaut.js).
