@@ -138,14 +138,11 @@ Juggernaut.fn.onmessage = function(data){
 Juggernaut.fn.reconnect = function(){
   if (this.recInterval) return;
 
-  var clear = this.proxy(function(){
-    clearInterval(this.recInterval);
-    this.recInterval = null;
-  });
-
   this.recInterval = setInterval(this.proxy(function(){
-    if (this.state == "connected") clear()
-    else {
+    if (this.state == "connected") {
+      clearInterval(this.recInterval);
+      this.recInterval = null;      
+    } else {
       this.trigger("reconnect");
       this.connect();
     }
