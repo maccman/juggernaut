@@ -1,1 +1,1955 @@
-if(!this.JSON){JSON=function(){function f(n){return n<10?"0"+n:n}Date.prototype.toJSON=function(){return this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z"};var m={"\b":"\\b","\t":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"};function stringify(value,whitelist){var a,i,k,l,r=/["\\\x00-\x1f\x7f-\x9f]/g,v;switch(typeof value){case"string":return r.test(value)?'"'+value.replace(r,function(a){var c=m[a];if(c){return c}c=a.charCodeAt();return"\\u00"+Math.floor(c/16).toString(16)+(c%16).toString(16)})+'"':'"'+value+'"';case"number":return isFinite(value)?String(value):"null";case"boolean":case"null":return String(value);case"object":if(!value){return"null"}if(typeof value.toJSON==="function"){return stringify(value.toJSON())}a=[];if(typeof value.length==="number"&&!(value.propertyIsEnumerable("length"))){l=value.length;for(i=0;i<l;i+=1){a.push(stringify(value[i],whitelist)||"null")}return"["+a.join(",")+"]"}if(whitelist){l=whitelist.length;for(i=0;i<l;i+=1){k=whitelist[i];if(typeof k==="string"){v=stringify(value[k],whitelist);if(v){a.push(stringify(k)+":"+v)}}}}else{for(k in value){if(typeof k==="string"){v=stringify(value[k],whitelist);if(v){a.push(stringify(k)+":"+v)}}}}return"{"+a.join(",")+"}"}}return{stringify:stringify,parse:function(text,filter){var j;function walk(k,v){var i,n;if(v&&typeof v==="object"){for(i in v){if(Object.prototype.hasOwnProperty.apply(v,[i])){n=walk(i,v[i]);if(n!==undefined){v[i]=n}}}}return filter(k,v)}if(/^[\],:{}\s]*$/.test(text.replace(/\\./g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");return typeof filter==="function"?walk("",j):j}throw new SyntaxError("parseJSON")}}}()}this.io={version:"0.6.2",setPath:function(a){if(window.console&&console.error){console.error("io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf")}this.path=/\/$/.test(a)?a:a+"/";WEB_SOCKET_SWF_LOCATION=a+"lib/vendor/web-socket-js/WebSocketMain.swf"}};if("jQuery" in this){jQuery.io=this.io}if(typeof window!="undefined"){if(typeof WEB_SOCKET_SWF_LOCATION==="undefined"){WEB_SOCKET_SWF_LOCATION="/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf"}}(function(){var a=false;io.util={ios:false,load:function(b){if(/loaded|complete/.test(document.readyState)||a){return b()}if("attachEvent" in window){window.attachEvent("onload",b)}else{window.addEventListener("load",b,false)}},inherit:function(d,b){for(var c in b.prototype){d.prototype[c]=b.prototype[c]}},indexOf:function(b,e,f){for(var c=b.length,d=(f<0)?Math.max(0,c+f):f||0;d<c;d++){if(b[d]===e){return d}}return -1},isArray:function(b){return Object.prototype.toString.call(b)==="[object Array]"},merge:function(d,b){for(var c in b){if(b.hasOwnProperty(c)){d[c]=b[c]}}}};io.util.ios=/iphone|ipad/i.test(navigator.userAgent);io.util.android=/android/i.test(navigator.userAgent);io.util.opera=/opera/i.test(navigator.userAgent);io.util.load(function(){a=true})})();(function(){var a="~m~",b=function(c){if(Object.prototype.toString.call(c)=="[object Object]"){if(!("JSON" in window)){if("console" in window&&console.error){console.error("Trying to encode as JSON, but JSON.stringify is missing.")}return'{ "$error": "Invalid message" }'}return"~j~"+JSON.stringify(c)}else{return String(c)}};Transport=io.Transport=function(d,c){this.base=d;this.options={timeout:15000};io.util.merge(this.options,c)};Transport.prototype.send=function(){throw new Error("Missing send() implementation")};Transport.prototype.connect=function(){throw new Error("Missing connect() implementation")};Transport.prototype.disconnect=function(){throw new Error("Missing disconnect() implementation")};Transport.prototype._encode=function(g){var d="",f,g=io.util.isArray(g)?g:[g];for(var e=0,c=g.length;e<c;e++){f=g[e]===null||g[e]===undefined?"":b(g[e]);d+=a+f.length+a+f}return d};Transport.prototype._decode=function(g){var f=[],e,h;do{if(g.substr(0,3)!==a){return f}g=g.substr(3);e="",h="";for(var d=0,c=g.length;d<c;d++){h=Number(g.substr(d,1));if(g.substr(d,1)==h){e+=h}else{g=g.substr(e.length+a.length);e=Number(e);break}}f.push(g.substr(0,e));g=g.substr(e)}while(g!=="");return f};Transport.prototype._onData=function(f){this._setTimeout();var e=this._decode(f);if(e&&e.length){for(var d=0,c=e.length;d<c;d++){this._onMessage(e[d])}}};Transport.prototype._setTimeout=function(){var c=this;if(this._timeout){clearTimeout(this._timeout)}this._timeout=setTimeout(function(){c._onTimeout()},this.options.timeout)};Transport.prototype._onTimeout=function(){this._onDisconnect()};Transport.prototype._onMessage=function(c){if(!this.sessionid){this.sessionid=c;this._onConnect()}else{if(c.substr(0,3)=="~h~"){this._onHeartbeat(c.substr(3))}else{if(c.substr(0,3)=="~j~"){this.base._onMessage(JSON.parse(c.substr(3)))}else{this.base._onMessage(c)}}}},Transport.prototype._onHeartbeat=function(c){this.send("~h~"+c)};Transport.prototype._onConnect=function(){this.connected=true;this.connecting=false;this.base._onConnect();this._setTimeout()};Transport.prototype._onDisconnect=function(){this.connecting=false;this.connected=false;this.sessionid=null;this.base._onDisconnect()};Transport.prototype._prepareUrl=function(){return(this.base.options.secure?"https":"http")+"://"+this.base.host+":"+this.base.options.port+"/"+this.base.options.resource+"/"+this.type+(this.sessionid?("/"+this.sessionid):"/")}})();(function(){var d=new Function,a=(function(){if(!("XMLHttpRequest" in window)){return false}var e=new XMLHttpRequest();return e.withCredentials!=undefined})(),c=function(h){if("XDomainRequest" in window&&h){return new XDomainRequest()}if("XMLHttpRequest" in window&&(!h||a)){return new XMLHttpRequest()}if(!h){try{var g=new ActiveXObject("MSXML2.XMLHTTP");return g}catch(i){}try{var f=new ActiveXObject("Microsoft.XMLHTTP");return f}catch(i){}}return false},b=io.Transport.XHR=function(){io.Transport.apply(this,arguments);this._sendBuffer=[]};io.util.inherit(b,io.Transport);b.prototype.connect=function(){this._get();return this};b.prototype._checkSend=function(){if(!this._posting&&this._sendBuffer.length){var e=this._encode(this._sendBuffer);this._sendBuffer=[];this._send(e)}};b.prototype.send=function(e){if(io.util.isArray(e)){this._sendBuffer.push.apply(this._sendBuffer,e)}else{this._sendBuffer.push(e)}this._checkSend();return this};b.prototype._send=function(f){var e=this;this._posting=true;this._sendXhr=this._request("send","POST");this._sendXhr.onreadystatechange=function(){var g;if(e._sendXhr.readyState==4){e._sendXhr.onreadystatechange=d;try{g=e._sendXhr.status}catch(h){}e._posting=false;if(g==200){e._checkSend()}else{e._onDisconnect()}}};this._sendXhr.send("data="+encodeURIComponent(f))};b.prototype.disconnect=function(){this._onDisconnect();return this};b.prototype._onDisconnect=function(){if(this._xhr){this._xhr.onreadystatechange=d;try{this._xhr.abort()}catch(f){}this._xhr=null}if(this._sendXhr){this._sendXhr.onreadystatechange=d;try{this._sendXhr.abort()}catch(f){}this._sendXhr=null}this._sendBuffer=[];io.Transport.prototype._onDisconnect.call(this)};b.prototype._request=function(f,h,e){var g=c(this.base._isXDomain());if(e){g.multipart=true}g.open(h||"GET",this._prepareUrl()+(f?"/"+f:""));if(h=="POST"&&"setRequestHeader" in g){g.setRequestHeader("Content-type","application/x-www-form-urlencoded; charset=utf-8")}return g};b.check=function(f){try{if(c(f)){return true}}catch(g){}return false};b.xdomainCheck=function(){return b.check(true)};b.request=c})();(function(){var a=io.Transport.websocket=function(){io.Transport.apply(this,arguments)};io.util.inherit(a,io.Transport);a.prototype.type="websocket";a.prototype.connect=function(){var b=this;this.socket=new WebSocket(this._prepareUrl());this.socket.onmessage=function(c){b._onData(c.data)};this.socket.onclose=function(c){b._onClose()};this.socket.onerror=function(c){b._onError(c)};return this};a.prototype.send=function(b){if(this.socket){this.socket.send(this._encode(b))}return this};a.prototype.disconnect=function(){if(this.socket){this.socket.close()}return this};a.prototype._onClose=function(){this._onDisconnect();return this};a.prototype._onError=function(b){this.base.emit("error",[b])};a.prototype._prepareUrl=function(){return(this.base.options.secure?"wss":"ws")+"://"+this.base.host+":"+this.base.options.port+"/"+this.base.options.resource+"/"+this.type+(this.sessionid?("/"+this.sessionid):"")};a.check=function(){return"WebSocket" in window&&WebSocket.prototype&&(WebSocket.prototype.send&&!!WebSocket.prototype.send.toString().match(/native/i))&&typeof WebSocket!=="undefined"};a.xdomainCheck=function(){return true}})();(function(){var a=io.Transport.flashsocket=function(){io.Transport.websocket.apply(this,arguments)};io.util.inherit(a,io.Transport.websocket);a.prototype.type="flashsocket";a.prototype.connect=function(){var b=this,c=arguments;WebSocket.__addTask(function(){io.Transport.websocket.prototype.connect.apply(b,c)});return this};a.prototype.send=function(){var b=this,c=arguments;WebSocket.__addTask(function(){io.Transport.websocket.prototype.send.apply(b,c)});return this};a.check=function(){if(typeof WebSocket=="undefined"||!("__addTask" in WebSocket)){return false}if(io.util.opera){return false}if("navigator" in window&&"plugins" in navigator&&navigator.plugins["Shockwave Flash"]){return !!navigator.plugins["Shockwave Flash"].description}if("ActiveXObject" in window){try{return !!new ActiveXObject("ShockwaveFlash.ShockwaveFlash").GetVariable("$version")}catch(b){}}return false};a.xdomainCheck=function(){return true}})();(function(){var a=io.Transport.htmlfile=function(){io.Transport.XHR.apply(this,arguments)};io.util.inherit(a,io.Transport.XHR);a.prototype.type="htmlfile";a.prototype._get=function(){var b=this;this._open();window.attachEvent("onunload",function(){b._destroy()})};a.prototype._open=function(){this._doc=new ActiveXObject("htmlfile");this._doc.open();this._doc.write("<html></html>");this._doc.parentWindow.s=this;this._doc.close();var b=this._doc.createElement("div");this._doc.body.appendChild(b);this._iframe=this._doc.createElement("iframe");b.appendChild(this._iframe);this._iframe.src=this._prepareUrl()+"/"+(+new Date)};a.prototype._=function(c,d){this._onData(c);var b=d.getElementsByTagName("script")[0];b.parentNode.removeChild(b)};a.prototype._destroy=function(){if(this._iframe){this._iframe.src="about:blank";this._doc=null;CollectGarbage()}};a.prototype.disconnect=function(){this._destroy();return io.Transport.XHR.prototype.disconnect.call(this)};a.check=function(){if("ActiveXObject" in window){try{var b=new ActiveXObject("htmlfile");return b&&io.Transport.XHR.check()}catch(c){}}return false};a.xdomainCheck=function(){return false}})();(function(){var a=io.Transport["xhr-multipart"]=function(){io.Transport.XHR.apply(this,arguments)};io.util.inherit(a,io.Transport.XHR);a.prototype.type="xhr-multipart";a.prototype._get=function(){var b=this;this._xhr=this._request("","GET",true);this._xhr.onreadystatechange=function(){if(b._xhr.readyState==4){b._onData(b._xhr.responseText)}};this._xhr.send(null)};a.check=function(){return"XMLHttpRequest" in window&&"prototype" in XMLHttpRequest&&"multipart" in XMLHttpRequest.prototype};a.xdomainCheck=function(){return true}})();(function(){var a=new Function(),b=io.Transport["xhr-polling"]=function(){io.Transport.XHR.apply(this,arguments)};io.util.inherit(b,io.Transport.XHR);b.prototype.type="xhr-polling";b.prototype.connect=function(){if(io.util.ios||io.util.android){var c=this;io.util.load(function(){setTimeout(function(){io.Transport.XHR.prototype.connect.call(c)},10)})}else{io.Transport.XHR.prototype.connect.call(this)}};b.prototype._get=function(){var c=this;this._xhr=this._request(+new Date,"GET");this._xhr.onreadystatechange=function(){var d;if(c._xhr.readyState==4){c._xhr.onreadystatechange=a;try{d=c._xhr.status}catch(f){}if(d==200){c._onData(c._xhr.responseText);c._get()}else{c._onDisconnect()}}};this._xhr.send(null)};b.check=function(){return io.Transport.XHR.check()};b.xdomainCheck=function(){return io.Transport.XHR.xdomainCheck()}})();io.JSONP=[];JSONPPolling=io.Transport["jsonp-polling"]=function(){io.Transport.XHR.apply(this,arguments);this._insertAt=document.getElementsByTagName("script")[0];this._index=io.JSONP.length;io.JSONP.push(this)};io.util.inherit(JSONPPolling,io.Transport["xhr-polling"]);JSONPPolling.prototype.type="jsonp-polling";JSONPPolling.prototype._send=function(h){var j=this;if(!("_form" in this)){var b=document.createElement("FORM"),c=document.createElement("TEXTAREA"),a=this._iframeId="socket_io_iframe_"+this._index,g;b.style.position="absolute";b.style.top="-1000px";b.style.left="-1000px";b.target=a;b.method="POST";b.action=this._prepareUrl()+"/"+(+new Date)+"/"+this._index;c.name="data";b.appendChild(c);this._insertAt.parentNode.insertBefore(b,this._insertAt);document.body.appendChild(b);this._form=b;this._area=c}function d(){f();j._posting=false;j._checkSend()}function f(){if(j._iframe){j._form.removeChild(j._iframe)}try{g=document.createElement('<iframe name="'+j._iframeId+'">')}catch(k){g=document.createElement("iframe");g.name=j._iframeId}g.id=j._iframeId;j._form.appendChild(g);j._iframe=g}f();this._posting=true;this._area.value=h;try{this._form.submit()}catch(i){}if(this._iframe.attachEvent){g.onreadystatechange=function(){if(j._iframe.readyState=="complete"){d()}}}else{this._iframe.onload=d}};JSONPPolling.prototype._get=function(){var b=this,a=document.createElement("SCRIPT");if(this._script){this._script.parentNode.removeChild(this._script);this._script=null}a.async=true;a.src=this._prepareUrl()+"/"+(+new Date)+"/"+this._index;a.onerror=function(){b._onDisconnect()};this._insertAt.parentNode.insertBefore(a,this._insertAt);this._script=a};JSONPPolling.prototype._=function(){this._onData.apply(this,arguments);this._get();return this};JSONPPolling.check=function(){return true};JSONPPolling.xdomainCheck=function(){return true};(function(){var a=io.Socket=function(c,b){this.host=c||document.domain;this.options={secure:false,document:document,port:document.location.port||80,resource:"socket.io",transports:["websocket","flashsocket","htmlfile","xhr-multipart","xhr-polling","jsonp-polling"],transportOptions:{"xhr-polling":{timeout:25000},"jsonp-polling":{timeout:25000}},connectTimeout:5000,tryTransportsOnConnectTimeout:true,rememberTransport:true};io.util.merge(this.options,b);this.connected=false;this.connecting=false;this._events={};this.transport=this.getTransport();if(!this.transport&&"console" in window){console.error("No transport available")}};a.prototype.getTransport=function(e){var b=e||this.options.transports,c;if(this.options.rememberTransport&&!e){c=this.options.document.cookie.match("(?:^|;)\\s*socketio=([^;]*)");if(c){this._rememberedTransport=true;b=[decodeURIComponent(c[1])]}}for(var d=0,f;f=b[d];d++){if(io.Transport[f]&&io.Transport[f].check()&&(!this._isXDomain()||io.Transport[f].xdomainCheck())){return new io.Transport[f](this,this.options.transportOptions[f]||{})}}return null};a.prototype.connect=function(){if(this.transport&&!this.connected){if(this.connecting){this.disconnect()}this.connecting=true;this.emit("connecting",[this.transport.type]);this.transport.connect();if(this.options.connectTimeout){var b=this;this.connectTimeoutTimer=setTimeout(function(){if(!b.connected){b.disconnect();if(b.options.tryTransportsOnConnectTimeout&&!b._rememberedTransport){if(!b._remainingTransports){b._remainingTransports=b.options.transports.slice(0)}var c=b._remainingTransports;while(c.length>0&&c.splice(0,1)[0]!=b.transport.type){}if(c.length){b.transport=b.getTransport(c);b.connect()}}if(!b._remainingTransports||b._remainingTransports.length==0){b.emit("connect_failed")}}if(b._remainingTransports&&b._remainingTransports.length==0){delete b._remainingTransports}},this.options.connectTimeout)}}return this};a.prototype.send=function(b){if(!this.transport||!this.transport.connected){return this._queue(b)}this.transport.send(b);return this};a.prototype.disconnect=function(){if(this.connectTimeoutTimer){clearTimeout(this.connectTimeoutTimer)}this.transport.disconnect();return this};a.prototype.on=function(b,c){if(!(b in this._events)){this._events[b]=[]}this._events[b].push(c);return this};a.prototype.emit=function(c,b){if(c in this._events){var e=this._events[c].concat();for(var d=0,f=e.length;d<f;d++){e[d].apply(this,b===undefined?[]:b)}}return this};a.prototype.removeEvent=function(d,e){if(d in this._events){for(var c=0,b=this._events[d].length;c<b;c++){if(this._events[d][c]==e){this._events[d].splice(c,1)}}}return this};a.prototype._queue=function(b){if(!("_queueStack" in this)){this._queueStack=[]}this._queueStack.push(b);return this};a.prototype._doQueue=function(){if(!("_queueStack" in this)||!this._queueStack.length){return this}this.transport.send(this._queueStack);this._queueStack=[];return this};a.prototype._isXDomain=function(){return this.host!==document.domain};a.prototype._onConnect=function(){this.connected=true;this.connecting=false;this._doQueue();if(this.options.rememberTransport){this.options.document.cookie="socketio="+encodeURIComponent(this.transport.type)}this.emit("connect")};a.prototype._onMessage=function(b){this.emit("message",[b])};a.prototype._onDisconnect=function(){var b=this.connected;this.connected=false;this.connecting=false;this._queueStack=[];if(b){this.emit("disconnect")}};a.prototype.fire=a.prototype.emit;a.prototype.addListener=a.prototype.addEvent=a.prototype.addEventListener=a.prototype.on})();var swfobject=function(){var aq="undefined",aD="object",ab="Shockwave Flash",X="ShockwaveFlash.ShockwaveFlash",aE="application/x-shockwave-flash",ac="SWFObjectExprInst",ax="onreadystatechange",af=window,aL=document,aB=navigator,aa=false,Z=[aN],aG=[],ag=[],al=[],aJ,ad,ap,at,ak=false,aU=false,aH,an,aI=true,ah=function(){var a=typeof aL.getElementById!=aq&&typeof aL.getElementsByTagName!=aq&&typeof aL.createElement!=aq,e=aB.userAgent.toLowerCase(),c=aB.platform.toLowerCase(),h=c?/win/.test(c):/win/.test(e),j=c?/mac/.test(c):/mac/.test(e),g=/webkit/.test(e)?parseFloat(e.replace(/^.*webkit\/(\d+(\.\d+)?).*$/,"$1")):false,d=!+"\v1",f=[0,0,0],k=null;if(typeof aB.plugins!=aq&&typeof aB.plugins[ab]==aD){k=aB.plugins[ab].description;if(k&&!(typeof aB.mimeTypes!=aq&&aB.mimeTypes[aE]&&!aB.mimeTypes[aE].enabledPlugin)){aa=true;d=false;k=k.replace(/^.*\s+(\S+\s+\S+$)/,"$1");f[0]=parseInt(k.replace(/^(.*)\..*$/,"$1"),10);f[1]=parseInt(k.replace(/^.*\.(.*)\s.*$/,"$1"),10);f[2]=/[a-zA-Z]/.test(k)?parseInt(k.replace(/^.*[a-zA-Z]+(.*)$/,"$1"),10):0}}else{if(typeof af.ActiveXObject!=aq){try{var i=new ActiveXObject(X);if(i){k=i.GetVariable("$version");if(k){d=true;k=k.split(" ")[1].split(",");f=[parseInt(k[0],10),parseInt(k[1],10),parseInt(k[2],10)]}}}catch(b){}}}return{w3:a,pv:f,wk:g,ie:d,win:h,mac:j}}(),aK=function(){if(!ah.w3){return}if((typeof aL.readyState!=aq&&aL.readyState=="complete")||(typeof aL.readyState==aq&&(aL.getElementsByTagName("body")[0]||aL.body))){aP()}if(!ak){if(typeof aL.addEventListener!=aq){aL.addEventListener("DOMContentLoaded",aP,false)}if(ah.ie&&ah.win){aL.attachEvent(ax,function(){if(aL.readyState=="complete"){aL.detachEvent(ax,arguments.callee);aP()}});if(af==top){(function(){if(ak){return}try{aL.documentElement.doScroll("left")}catch(a){setTimeout(arguments.callee,0);return}aP()})()}}if(ah.wk){(function(){if(ak){return}if(!/loaded|complete/.test(aL.readyState)){setTimeout(arguments.callee,0);return}aP()})()}aC(aP)}}();function aP(){if(ak){return}try{var b=aL.getElementsByTagName("body")[0].appendChild(ar("span"));b.parentNode.removeChild(b)}catch(a){return}ak=true;var d=Z.length;for(var c=0;c<d;c++){Z[c]()}}function aj(a){if(ak){a()}else{Z[Z.length]=a}}function aC(a){if(typeof af.addEventListener!=aq){af.addEventListener("load",a,false)}else{if(typeof aL.addEventListener!=aq){aL.addEventListener("load",a,false)}else{if(typeof af.attachEvent!=aq){aM(af,"onload",a)}else{if(typeof af.onload=="function"){var b=af.onload;af.onload=function(){b();a()}}else{af.onload=a}}}}}function aN(){if(aa){Y()}else{am()}}function Y(){var d=aL.getElementsByTagName("body")[0];var b=ar(aD);b.setAttribute("type",aE);var a=d.appendChild(b);if(a){var c=0;(function(){if(typeof a.GetVariable!=aq){var e=a.GetVariable("$version");if(e){e=e.split(" ")[1].split(",");ah.pv=[parseInt(e[0],10),parseInt(e[1],10),parseInt(e[2],10)]}}else{if(c<10){c++;setTimeout(arguments.callee,10);return}}d.removeChild(b);a=null;am()})()}else{am()}}function am(){var g=aG.length;if(g>0){for(var h=0;h<g;h++){var c=aG[h].id;var l=aG[h].callbackFn;var a={success:false,id:c};if(ah.pv[0]>0){var i=aS(c);if(i){if(ao(aG[h].swfVersion)&&!(ah.wk&&ah.wk<312)){ay(c,true);if(l){a.success=true;a.ref=av(c);l(a)}}else{if(aG[h].expressInstall&&au()){var e={};e.data=aG[h].expressInstall;e.width=i.getAttribute("width")||"0";e.height=i.getAttribute("height")||"0";if(i.getAttribute("class")){e.styleclass=i.getAttribute("class")}if(i.getAttribute("align")){e.align=i.getAttribute("align")}var f={};var d=i.getElementsByTagName("param");var k=d.length;for(var j=0;j<k;j++){if(d[j].getAttribute("name").toLowerCase()!="movie"){f[d[j].getAttribute("name")]=d[j].getAttribute("value")}}ae(e,f,c,l)}else{aF(i);if(l){l(a)}}}}}else{ay(c,true);if(l){var b=av(c);if(b&&typeof b.SetVariable!=aq){a.success=true;a.ref=b}l(a)}}}}}function av(b){var d=null;var c=aS(b);if(c&&c.nodeName=="OBJECT"){if(typeof c.SetVariable!=aq){d=c}else{var a=c.getElementsByTagName(aD)[0];if(a){d=a}}}return d}function au(){return !aU&&ao("6.0.65")&&(ah.win||ah.mac)&&!(ah.wk&&ah.wk<312)}function ae(f,d,h,e){aU=true;ap=e||null;at={success:false,id:h};var a=aS(h);if(a){if(a.nodeName=="OBJECT"){aJ=aO(a);ad=null}else{aJ=a;ad=h}f.id=ac;if(typeof f.width==aq||(!/%$/.test(f.width)&&parseInt(f.width,10)<310)){f.width="310"}if(typeof f.height==aq||(!/%$/.test(f.height)&&parseInt(f.height,10)<137)){f.height="137"}aL.title=aL.title.slice(0,47)+" - Flash Player Installation";var b=ah.ie&&ah.win?"ActiveX":"PlugIn",c="MMredirectURL="+af.location.toString().replace(/&/g,"%26")+"&MMplayerType="+b+"&MMdoctitle="+aL.title;if(typeof d.flashvars!=aq){d.flashvars+="&"+c}else{d.flashvars=c}if(ah.ie&&ah.win&&a.readyState!=4){var g=ar("div");h+="SWFObjectNew";g.setAttribute("id",h);a.parentNode.insertBefore(g,a);a.style.display="none";(function(){if(a.readyState==4){a.parentNode.removeChild(a)}else{setTimeout(arguments.callee,10)}})()}aA(f,d,h)}}function aF(a){if(ah.ie&&ah.win&&a.readyState!=4){var b=ar("div");a.parentNode.insertBefore(b,a);b.parentNode.replaceChild(aO(a),b);a.style.display="none";(function(){if(a.readyState==4){a.parentNode.removeChild(a)}else{setTimeout(arguments.callee,10)}})()}else{a.parentNode.replaceChild(aO(a),a)}}function aO(b){var d=ar("div");if(ah.win&&ah.ie){d.innerHTML=b.innerHTML}else{var e=b.getElementsByTagName(aD)[0];if(e){var a=e.childNodes;if(a){var f=a.length;for(var c=0;c<f;c++){if(!(a[c].nodeType==1&&a[c].nodeName=="PARAM")&&!(a[c].nodeType==8)){d.appendChild(a[c].cloneNode(true))}}}}}return d}function aA(e,g,c){var d,a=aS(c);if(ah.wk&&ah.wk<312){return d}if(a){if(typeof e.id==aq){e.id=c}if(ah.ie&&ah.win){var f="";for(var i in e){if(e[i]!=Object.prototype[i]){if(i.toLowerCase()=="data"){g.movie=e[i]}else{if(i.toLowerCase()=="styleclass"){f+=' class="'+e[i]+'"'}else{if(i.toLowerCase()!="classid"){f+=" "+i+'="'+e[i]+'"'}}}}}var h="";for(var j in g){if(g[j]!=Object.prototype[j]){h+='<param name="'+j+'" value="'+g[j]+'" />'}}a.outerHTML='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"'+f+">"+h+"</object>";ag[ag.length]=e.id;d=aS(e.id)}else{var b=ar(aD);b.setAttribute("type",aE);for(var k in e){if(e[k]!=Object.prototype[k]){if(k.toLowerCase()=="styleclass"){b.setAttribute("class",e[k])}else{if(k.toLowerCase()!="classid"){b.setAttribute(k,e[k])}}}}for(var l in g){if(g[l]!=Object.prototype[l]&&l.toLowerCase()!="movie"){aQ(b,l,g[l])}}a.parentNode.replaceChild(b,a);d=b}}return d}function aQ(b,d,c){var a=ar("param");a.setAttribute("name",d);a.setAttribute("value",c);b.appendChild(a)}function aw(a){var b=aS(a);if(b&&b.nodeName=="OBJECT"){if(ah.ie&&ah.win){b.style.display="none";(function(){if(b.readyState==4){aT(a)}else{setTimeout(arguments.callee,10)}})()}else{b.parentNode.removeChild(b)}}}function aT(a){var b=aS(a);if(b){for(var c in b){if(typeof b[c]=="function"){b[c]=null}}b.parentNode.removeChild(b)}}function aS(a){var c=null;try{c=aL.getElementById(a)}catch(b){}return c}function ar(a){return aL.createElement(a)}function aM(a,c,b){a.attachEvent(c,b);al[al.length]=[a,c,b]}function ao(a){var b=ah.pv,c=a.split(".");c[0]=parseInt(c[0],10);c[1]=parseInt(c[1],10)||0;c[2]=parseInt(c[2],10)||0;return(b[0]>c[0]||(b[0]==c[0]&&b[1]>c[1])||(b[0]==c[0]&&b[1]==c[1]&&b[2]>=c[2]))?true:false}function az(b,f,a,c){if(ah.ie&&ah.mac){return}var e=aL.getElementsByTagName("head")[0];if(!e){return}var g=(a&&typeof a=="string")?a:"screen";if(c){aH=null;an=null}if(!aH||an!=g){var d=ar("style");d.setAttribute("type","text/css");d.setAttribute("media",g);aH=e.appendChild(d);if(ah.ie&&ah.win&&typeof aL.styleSheets!=aq&&aL.styleSheets.length>0){aH=aL.styleSheets[aL.styleSheets.length-1]}an=g}if(ah.ie&&ah.win){if(aH&&typeof aH.addRule==aD){aH.addRule(b,f)}}else{if(aH&&typeof aL.createTextNode!=aq){aH.appendChild(aL.createTextNode(b+" {"+f+"}"))}}}function ay(a,c){if(!aI){return}var b=c?"visible":"hidden";if(ak&&aS(a)){aS(a).style.visibility=b}else{az("#"+a,"visibility:"+b)}}function ai(b){var a=/[\\\"<>\.;]/;var c=a.exec(b)!=null;return c&&typeof encodeURIComponent!=aq?encodeURIComponent(b):b}var aR=function(){if(ah.ie&&ah.win){window.attachEvent("onunload",function(){var a=al.length;for(var b=0;b<a;b++){al[b][0].detachEvent(al[b][1],al[b][2])}var d=ag.length;for(var c=0;c<d;c++){aw(ag[c])}for(var e in ah){ah[e]=null}ah=null;for(var f in swfobject){swfobject[f]=null}swfobject=null})}}();return{registerObject:function(a,e,c,b){if(ah.w3&&a&&e){var d={};d.id=a;d.swfVersion=e;d.expressInstall=c;d.callbackFn=b;aG[aG.length]=d;ay(a,false)}else{if(b){b({success:false,id:a})}}},getObjectById:function(a){if(ah.w3){return av(a)}},embedSWF:function(k,e,h,f,c,a,b,i,g,j){var d={success:false,id:e};if(ah.w3&&!(ah.wk&&ah.wk<312)&&k&&e&&h&&f&&c){ay(e,false);aj(function(){h+="";f+="";var q={};if(g&&typeof g===aD){for(var o in g){q[o]=g[o]}}q.data=k;q.width=h;q.height=f;var n={};if(i&&typeof i===aD){for(var p in i){n[p]=i[p]}}if(b&&typeof b===aD){for(var l in b){if(typeof n.flashvars!=aq){n.flashvars+="&"+l+"="+b[l]}else{n.flashvars=l+"="+b[l]}}}if(ao(c)){var m=aA(q,n,e);if(q.id==e){ay(e,true)}d.success=true;d.ref=m}else{if(a&&au()){q.data=a;ae(q,n,e,j);return}else{ay(e,true)}}if(j){j(d)}})}else{if(j){j(d)}}},switchOffAutoHideShow:function(){aI=false},ua:ah,getFlashPlayerVersion:function(){return{major:ah.pv[0],minor:ah.pv[1],release:ah.pv[2]}},hasFlashPlayerVersion:ao,createSWF:function(a,b,c){if(ah.w3){return aA(a,b,c)}else{return undefined}},showExpressInstall:function(b,a,d,c){if(ah.w3&&au()){ae(b,a,d,c)}},removeSWF:function(a){if(ah.w3){aw(a)}},createCSS:function(b,a,c,d){if(ah.w3){az(b,a,c,d)}},addDomLoadEvent:aj,addLoadEvent:aC,getQueryParamValue:function(b){var a=aL.location.search||aL.location.hash;if(a){if(/\?/.test(a)){a=a.split("?")[1]}if(b==null){return ai(a)}var c=a.split("&");for(var d=0;d<c.length;d++){if(c[d].substring(0,c[d].indexOf("="))==b){return ai(c[d].substring((c[d].indexOf("=")+1)))}}}return""},expressInstallCallback:function(){if(aU){var a=aS(ac);if(a&&aJ){a.parentNode.replaceChild(aJ,a);if(ad){ay(ad,true);if(ah.ie&&ah.win){aJ.style.display="block"}}if(ap){ap(at)}}aU=false}}}}();function FABridge(b,a){this.target=b;this.remoteTypeCache={};this.remoteInstanceCache={};this.remoteFunctionCache={};this.localFunctionCache={};this.bridgeID=FABridge.nextBridgeID++;this.name=a;this.nextLocalFuncID=0;FABridge.instances[this.name]=this;FABridge.idMap[this.bridgeID]=this;return this}FABridge.TYPE_ASINSTANCE=1;FABridge.TYPE_ASFUNCTION=2;FABridge.TYPE_JSFUNCTION=3;FABridge.TYPE_ANONYMOUS=4;FABridge.initCallbacks={};FABridge.userTypes={};FABridge.addToUserTypes=function(){for(var a=0;a<arguments.length;a++){FABridge.userTypes[arguments[a]]={typeName:arguments[a],enriched:false}}};FABridge.argsToArray=function(b){var a=[];for(var c=0;c<b.length;c++){a[c]=b[c]}return a};function instanceFactory(a){this.fb_instance_id=a;return this}function FABridge__invokeJSFunction(a){var c=a[0];var b=a.concat();b.shift();var d=FABridge.extractBridgeFromID(c);return d.invokeLocalFunction(c,b)}FABridge.addInitializationCallback=function(b,d){var c=FABridge.instances[b];if(c!=undefined){d.call(c);return}var a=FABridge.initCallbacks[b];if(a==null){FABridge.initCallbacks[b]=a=[]}a.push(d)};function FABridge__bridgeInitialized(g){var a=document.getElementsByTagName("object");var f=a.length;var d=[];if(f>0){for(var u=0;u<f;u++){if(typeof a[u].SetVariable!="undefined"){d[d.length]=a[u]}}}var n=document.getElementsByTagName("embed");var b=n.length;var t=[];if(b>0){for(var r=0;r<b;r++){if(typeof n[r].SetVariable!="undefined"){t[t.length]=n[r]}}}var c=d.length;var s=t.length;var h="bridgeName="+g;if((c==1&&!s)||(c==1&&s==1)){FABridge.attachBridge(d[0],g)}else{if(s==1&&!c){FABridge.attachBridge(t[0],g)}else{var v=false;if(c>1){for(var q=0;q<c;q++){var x=d[q].childNodes;for(var p=0;p<x.length;p++){var e=x[p];if(e.nodeType==1&&e.tagName.toLowerCase()=="param"&&e.name.toLowerCase()=="flashvars"&&e.value.indexOf(h)>=0){FABridge.attachBridge(d[q],g);v=true;break}}if(v){break}}}if(!v&&s>1){for(var o=0;o<s;o++){var w=t[o].attributes.getNamedItem("flashVars").nodeValue;if(w.indexOf(h)>=0){FABridge.attachBridge(t[o],g);break}}}}}return true}FABridge.nextBridgeID=0;FABridge.instances={};FABridge.idMap={};FABridge.refCount=0;FABridge.extractBridgeFromID=function(b){var a=(b>>16);return FABridge.idMap[a]};FABridge.attachBridge=function(a,c){var b=new FABridge(a,c);FABridge[c]=b;var e=FABridge.initCallbacks[c];if(e==null){return}for(var d=0;d<e.length;d++){e[d].call(b)}delete FABridge.initCallbacks[c]};FABridge.blockedMethods={toString:true,get:true,set:true,call:true};FABridge.prototype={root:function(){return this.deserialize(this.target.getRoot())},releaseASObjects:function(){return this.target.releaseASObjects()},releaseNamedASObject:function(b){if(typeof(b)!="object"){return false}else{var a=this.target.releaseNamedASObject(b.fb_instance_id);return a}},create:function(a){return this.deserialize(this.target.create(a))},makeID:function(a){return(this.bridgeID<<16)+a},getPropertyFromAS:function(b,a){if(FABridge.refCount>0){throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.")}else{FABridge.refCount++;retVal=this.target.getPropFromAS(b,a);retVal=this.handleError(retVal);FABridge.refCount--;return retVal}},setPropertyInAS:function(c,b,a){if(FABridge.refCount>0){throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.")}else{FABridge.refCount++;retVal=this.target.setPropInAS(c,b,this.serialize(a));retVal=this.handleError(retVal);FABridge.refCount--;return retVal}},callASFunction:function(b,a){if(FABridge.refCount>0){throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.")}else{FABridge.refCount++;retVal=this.target.invokeASFunction(b,this.serialize(a));retVal=this.handleError(retVal);FABridge.refCount--;return retVal}},callASMethod:function(b,c,a){if(FABridge.refCount>0){throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.")}else{FABridge.refCount++;a=this.serialize(a);retVal=this.target.invokeASMethod(b,c,a);retVal=this.handleError(retVal);FABridge.refCount--;return retVal}},invokeLocalFunction:function(d,b){var a;var c=this.localFunctionCache[d];if(c!=undefined){a=this.serialize(c.apply(null,this.deserialize(b)))}return a},getTypeFromName:function(a){return this.remoteTypeCache[a]},createProxy:function(c,b){var d=this.getTypeFromName(b);instanceFactory.prototype=d;var a=new instanceFactory(c);this.remoteInstanceCache[c]=a;return a},getProxy:function(a){return this.remoteInstanceCache[a]},addTypeDataToCache:function(e){var c=new ASProxy(this,e.name);var b=e.accessors;for(var d=0;d<b.length;d++){this.addPropertyToType(c,b[d])}var a=e.methods;for(var d=0;d<a.length;d++){if(FABridge.blockedMethods[a[d]]==undefined){this.addMethodToType(c,a[d])}}this.remoteTypeCache[c.typeName]=c;return c},addPropertyToType:function(a,e){var f=e.charAt(0);var b;var d;if(f>="a"&&f<="z"){d="get"+f.toUpperCase()+e.substr(1);b="set"+f.toUpperCase()+e.substr(1)}else{d="get"+e;b="set"+e}a[b]=function(c){this.bridge.setPropertyInAS(this.fb_instance_id,e,c)};a[d]=function(){return this.bridge.deserialize(this.bridge.getPropertyFromAS(this.fb_instance_id,e))}},addMethodToType:function(a,b){a[b]=function(){return this.bridge.deserialize(this.bridge.callASMethod(this.fb_instance_id,b,FABridge.argsToArray(arguments)))}},getFunctionProxy:function(a){var b=this;if(this.remoteFunctionCache[a]==null){this.remoteFunctionCache[a]=function(){b.callASFunction(a,FABridge.argsToArray(arguments))}}return this.remoteFunctionCache[a]},getFunctionID:function(a){if(a.__bridge_id__==undefined){a.__bridge_id__=this.makeID(this.nextLocalFuncID++);this.localFunctionCache[a.__bridge_id__]=a}return a.__bridge_id__},serialize:function(d){var a={};var c=typeof(d);if(c=="number"||c=="string"||c=="boolean"||c==null||c==undefined){a=d}else{if(d instanceof Array){a=[];for(var b=0;b<d.length;b++){a[b]=this.serialize(d[b])}}else{if(c=="function"){a.type=FABridge.TYPE_JSFUNCTION;a.value=this.getFunctionID(d)}else{if(d instanceof ASProxy){a.type=FABridge.TYPE_ASINSTANCE;a.value=d.fb_instance_id}else{a.type=FABridge.TYPE_ANONYMOUS;a.value=d}}}}return a},deserialize:function(e){var a;var c=typeof(e);if(c=="number"||c=="string"||c=="boolean"||e==null||e==undefined){a=this.handleError(e)}else{if(e instanceof Array){a=[];for(var b=0;b<e.length;b++){a[b]=this.deserialize(e[b])}}else{if(c=="object"){for(var b=0;b<e.newTypes.length;b++){this.addTypeDataToCache(e.newTypes[b])}for(var d in e.newRefs){this.createProxy(d,e.newRefs[d])}if(e.type==FABridge.TYPE_PRIMITIVE){a=e.value}else{if(e.type==FABridge.TYPE_ASFUNCTION){a=this.getFunctionProxy(e.value)}else{if(e.type==FABridge.TYPE_ASINSTANCE){a=this.getProxy(e.value)}else{if(e.type==FABridge.TYPE_ANONYMOUS){a=e.value}}}}}}}return a},addRef:function(a){this.target.incRef(a.fb_instance_id)},release:function(a){this.target.releaseRef(a.fb_instance_id)},handleError:function(b){if(typeof(b)=="string"&&b.indexOf("__FLASHERROR")==0){var a=b.split("||");if(FABridge.refCount>0){FABridge.refCount--}throw new Error(a[1]);return b}else{return b}}};ASProxy=function(b,a){this.bridge=b;this.typeName=a;return this};ASProxy.prototype={get:function(a){return this.bridge.deserialize(this.bridge.getPropertyFromAS(this.fb_instance_id,a))},set:function(b,a){this.bridge.setPropertyInAS(this.fb_instance_id,b,a)},call:function(b,a){this.bridge.callASMethod(this.fb_instance_id,b,a)},addRef:function(){this.bridge.addRef(this)},release:function(){this.bridge.release(this)}};(function(){if(window.WebSocket){return}var a=window.console;if(!a||!a.log||!a.error){a={log:function(){},error:function(){}}}if(!swfobject.hasFlashPlayerVersion("9.0.0")){a.error("Flash Player is not installed.");return}if(location.protocol=="file:"){a.error("WARNING: web-socket-js doesn't work in file:///... URL unless you set Flash Security Settings properly. Open the page via Web server i.e. http://...")}WebSocket=function(e,h,d,g,f){var c=this;c.readyState=WebSocket.CONNECTING;c.bufferedAmount=0;setTimeout(function(){WebSocket.__addTask(function(){c.__createFlash(e,h,d,g,f)})},0)};WebSocket.prototype.__createFlash=function(e,h,d,g,f){var c=this;c.__flash=WebSocket.__flash.create(e,h,d||null,g||0,f||null);c.__flash.addEventListener("event",function(i){setTimeout(function(){c.__handleEvents()},0)})};WebSocket.prototype.send=function(d){if(!this.__flash||this.readyState==WebSocket.CONNECTING){throw"INVALID_STATE_ERR: Web Socket connection has not been established"}var c=this.__flash.send(encodeURIComponent(d));if(c<0){return true}else{this.bufferedAmount+=c;return false}};WebSocket.prototype.close=function(){var c=this;if(!c.__flash){return}if(c.readyState==WebSocket.CLOSED||c.readyState==WebSocket.CLOSING){return}c.__flash.close();c.readyState=WebSocket.CLOSED;if(c.__timer){clearInterval(c.__timer)}if(c.onclose){setTimeout(c.onclose,0)}};WebSocket.prototype.addEventListener=function(d,e,c){if(!("__events" in this)){this.__events={}}if(!(d in this.__events)){this.__events[d]=[];if("function"==typeof this["on"+d]){this.__events[d].defaultHandler=this["on"+d];this["on"+d]=this.__createEventHandler(this,d)}}this.__events[d].push(e)};WebSocket.prototype.removeEventListener=function(e,f,c){if(!("__events" in this)){this.__events={}}if(!(e in this.__events)){return}for(var d=this.__events.length;d>-1;--d){if(f===this.__events[e][d]){this.__events[e].splice(d,1);break}}};WebSocket.prototype.dispatchEvent=function(e){if(!("__events" in this)){throw"UNSPECIFIED_EVENT_TYPE_ERR"}if(!(e.type in this.__events)){throw"UNSPECIFIED_EVENT_TYPE_ERR"}for(var d=0,c=this.__events[e.type].length;d<c;++d){this.__events[e.type][d](e);if(e.cancelBubble){break}}if(false!==e.returnValue&&"function"==typeof this.__events[e.type].defaultHandler){this.__events[e.type].defaultHandler(e)}};WebSocket.prototype.__handleEvents=function(){var d=this.__flash.receiveEvents();for(var c=0;c<d.length;c++){try{var f=d[c];if("readyState" in f){this.readyState=f.readyState}if(f.type=="open"){if(this.__timer){clearInterval(this.__timer)}if(window.opera){this.__timer=setInterval(function(){this.__handleEvents()},500)}if(this.onopen){this.onopen()}}else{if(f.type=="close"){if(this.__timer){clearInterval(this.__timer)}if(this.onclose){this.onclose()}}else{if(f.type=="message"){if(this.onmessage){var g=decodeURIComponent(f.data);var h;if(window.MessageEvent&&!window.opera){h=document.createEvent("MessageEvent");h.initMessageEvent("message",false,false,g,null,null,window,null)}else{h={data:g}}this.onmessage(h)}}else{if(f.type=="error"){if(this.__timer){clearInterval(this.__timer)}if(this.onerror){this.onerror()}}else{throw"unknown event type: "+f.type}}}}}catch(h){a.error(h.toString())}}};WebSocket.prototype.__createEventHandler=function(c,d){return function(g){var f=new b();f.initEvent(d,true,true);f.target=f.currentTarget=c;for(var e in g){f[e]=g[e]}c.dispatchEvent(f,arguments)}};function b(){}b.prototype.cancelable=true;b.prototype.cancelBubble=false;b.prototype.preventDefault=function(){if(this.cancelable){this.returnValue=false}};b.prototype.stopPropagation=function(){this.cancelBubble=true};b.prototype.initEvent=function(c,e,d){this.type=c;this.cancelable=d;this.timeStamp=new Date()};WebSocket.CONNECTING=0;WebSocket.OPEN=1;WebSocket.CLOSING=2;WebSocket.CLOSED=3;WebSocket.__tasks=[];WebSocket.loadFlashPolicyFile=function(c){WebSocket.__addTask(function(){WebSocket.__flash.loadManualPolicyFile(c)})};WebSocket.__initialize=function(){if(WebSocket.__swfLocation){window.WEB_SOCKET_SWF_LOCATION=WebSocket.__swfLocation}if(!window.WEB_SOCKET_SWF_LOCATION){a.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");return}var c=document.createElement("div");c.id="webSocketContainer";c.style.position="absolute";if(WebSocket.__isFlashLite()){c.style.left="0px";c.style.top="0px"}else{c.style.left="-100px";c.style.top="-100px"}var d=document.createElement("div");d.id="webSocketFlash";c.appendChild(d);document.body.appendChild(c);swfobject.embedSWF(WEB_SOCKET_SWF_LOCATION,"webSocketFlash","1","1","9.0.0",null,{bridgeName:"webSocket"},{hasPriority:true,allowScriptAccess:"always"},null,function(f){if(!f.success){a.error("[WebSocket] swfobject.embedSWF failed")}});FABridge.addInitializationCallback("webSocket",function(){try{WebSocket.__flash=FABridge.webSocket.root();WebSocket.__flash.setCallerUrl(location.href);WebSocket.__flash.setDebug(!!window.WEB_SOCKET_DEBUG);for(var f=0;f<WebSocket.__tasks.length;++f){WebSocket.__tasks[f]()}WebSocket.__tasks=[]}catch(g){a.error("[WebSocket] "+g.toString())}})};WebSocket.__addTask=function(c){if(WebSocket.__flash){c()}else{WebSocket.__tasks.push(c)}};WebSocket.__isFlashLite=function(){if(!window.navigator||!window.navigator.mimeTypes){return false}var c=window.navigator.mimeTypes["application/x-shockwave-flash"];if(!c||!c.enabledPlugin||!c.enabledPlugin.filename){return false}return c.enabledPlugin.filename.match(/flashlite/i)?true:false};window.webSocketLog=function(c){a.log(decodeURIComponent(c))};window.webSocketError=function(c){a.error(decodeURIComponent(c))};if(!window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION){if(window.addEventListener){window.addEventListener("load",WebSocket.__initialize,false)}else{window.attachEvent("onload",WebSocket.__initialize)}}})();if(typeof window!="undefined"){WEB_SOCKET_SWF_LOCATION="/WebSocketMain.swf"}var Juggernaut=function(a){this.options=a||{};this.host=this.options.host||window.location.hostname;this.port=this.options.port||8080;this.handlers={};this.state="disconnected";this.meta=this.options.meta;this.socket=new io.Socket(this.host,{rememberTransport:false,port:this.port,secure:this.options.secure});this.socket.on("connect",this.proxy(this.onconnect));this.socket.on("message",this.proxy(this.onmessage));this.socket.on("disconnect",this.proxy(this.ondisconnect));this.on("connect",this.proxy(this.writeMeta))};Juggernaut.fn=Juggernaut.prototype;Juggernaut.fn.proxy=function(b){var a=this;return(function(){return b.apply(a,arguments)})};Juggernaut.fn.on=function(a,b){if(!a||!b){return}if(!this.handlers[a]){this.handlers[a]=[]}this.handlers[a].push(b)};Juggernaut.fn.bind=Juggernaut.fn.on;Juggernaut.fn.write=function(a){if(typeof a.toJSON=="function"){a=a.toJSON()}this.socket.send(a)};Juggernaut.fn.connect=function(){if(this.state=="connected"||this.state=="connecting"){return}this.state="connecting";this.socket.connect()};Juggernaut.fn.subscribe=function(b,c){if(!b){throw"Must provide a channel"}this.on(b+":data",c);var a=this.proxy(function(){var d=new Juggernaut.Message;d.type="subscribe";d.channel=b;this.write(d)});this.on("connect",a);if(this.state=="connected"){a()}else{this.connect()}};Juggernaut.fn.unsubscribe=function(b){if(!b){throw"Must provide a channel"}var a=new Juggernaut.Message;a.type="unsubscribe";a.channel=b;this.write(a)};Juggernaut.fn.trigger=function(){var c=[];for(var g=0;g<arguments.length;g++){c.push(arguments[g])}var b=c.shift();var e=this.handlers[b];if(!e){return}for(var d=0,a=e.length;d<a;d++){e[d].apply(this,c)}};Juggernaut.fn.writeMeta=function(){if(!this.meta){return}var a=new Juggernaut.Message;a.type="meta";a.data=this.meta;this.write(a)};Juggernaut.fn.onconnect=function(){this.sessionID=this.socket.transport.sessionid;this.state="connected";this.trigger("connect")};Juggernaut.fn.ondisconnect=function(){this.state="disconnected";this.trigger("disconnect");if(this.options.reconnect!==false){this.reconnect()}};Juggernaut.fn.onmessage=function(b){var a=Juggernaut.Message.fromJSON(b);this.trigger("message",a);this.trigger("data",a.channel,a.data);this.trigger(a.channel+":data",a.data)};Juggernaut.fn.reconnect=function(){if(this.recInterval){return}var a=function(){clearInterval(this.recInterval);this.recInterval=null};this.recInterval=setInterval(this.proxy(function(){if(this.state=="connected"){a()}else{this.trigger("reconnect");this.connect()}}),3000)};Juggernaut.Message=function(b){for(var a in b){this[a]=b[a]}};Juggernaut.Message.fromJSON=function(a){return(new this(JSON.parse(a)))};Juggernaut.Message.prototype.toJSON=function(){var a={};for(var b in this){if(typeof this[b]!="function"){a[b]=this[b]}}return(JSON.stringify(a))};
+/*
+    http://www.JSON.org/json2.js
+    2011-02-23
+
+    Public Domain.
+
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+
+    See http://www.JSON.org/js.html
+
+
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
+
+    This file creates a global JSON object containing two methods: stringify
+    and parse.
+
+        JSON.stringify(value, replacer, space)
+            value       any JavaScript value, usually an object or array.
+
+            replacer    an optional parameter that determines how object
+                        values are stringified for objects. It can be a
+                        function or an array of strings.
+
+            space       an optional parameter that specifies the indentation
+                        of nested structures. If it is omitted, the text will
+                        be packed without extra whitespace. If it is a number,
+                        it will specify the number of spaces to indent at each
+                        level. If it is a string (such as '\t' or '&nbsp;'),
+                        it contains the characters used to indent at each level.
+
+            This method produces a JSON text from a JavaScript value.
+
+            When an object value is found, if the object contains a toJSON
+            method, its toJSON method will be called and the result will be
+            stringified. A toJSON method does not serialize: it returns the
+            value represented by the name/value pair that should be serialized,
+            or undefined if nothing should be serialized. The toJSON method
+            will be passed the key associated with the value, and this will be
+            bound to the value
+
+            For example, this would serialize Dates as ISO strings.
+
+                Date.prototype.toJSON = function (key) {
+                    function f(n) {
+                        return n < 10 ? '0' + n : n;
+                    }
+
+                    return this.getUTCFullYear()   + '-' +
+                         f(this.getUTCMonth() + 1) + '-' +
+                         f(this.getUTCDate())      + 'T' +
+                         f(this.getUTCHours())     + ':' +
+                         f(this.getUTCMinutes())   + ':' +
+                         f(this.getUTCSeconds())   + 'Z';
+                };
+
+            You can provide an optional replacer method. It will be passed the
+            key and value of each member, with this bound to the containing
+            object. The value that is returned from your method will be
+            serialized. If your method returns undefined, then the member will
+            be excluded from the serialization.
+
+            If the replacer parameter is an array of strings, then it will be
+            used to select the members to be serialized. It filters the results
+            such that only members with keys listed in the replacer array are
+            stringified.
+
+            Values that do not have JSON representations, such as undefined or
+            functions, will not be serialized. Such values in objects will be
+            dropped; in arrays they will be replaced with null. You can use
+            a replacer function to replace those with JSON values.
+            JSON.stringify(undefined) returns undefined.
+
+            The optional space parameter produces a stringification of the
+            value that is filled with line breaks and indentation to make it
+            easier to read.
+
+            If the space parameter is a non-empty string, then that string will
+            be used for indentation. If the space parameter is a number, then
+            the indentation will be that many spaces.
+
+            Example:
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}]);
+
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}], null, '\t');
+
+            text = JSON.stringify([new Date()], function (key, value) {
+                return this[key] instanceof Date ?
+                    'Date(' + this[key] + ')' : value;
+            });
+
+
+        JSON.parse(text, reviver)
+            This method parses a JSON text to produce an object or array.
+            It can throw a SyntaxError exception.
+
+            The optional reviver parameter is a function that can filter and
+            transform the results. It receives each of the keys and values,
+            and its return value is used instead of the original value.
+            If it returns what it received, then the structure is not modified.
+            If it returns undefined then the member is deleted.
+
+            Example:
+
+
+            myData = JSON.parse(text, function (key, value) {
+                var a;
+                if (typeof value === 'string') {
+                    a =
+/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+                    if (a) {
+                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
+                            +a[5], +a[6]));
+                    }
+                }
+                return value;
+            });
+
+            myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
+                var d;
+                if (typeof value === 'string' &&
+                        value.slice(0, 5) === 'Date(' &&
+                        value.slice(-1) === ')') {
+                    d = new Date(value.slice(5, -1));
+                    if (d) {
+                        return d;
+                    }
+                }
+                return value;
+            });
+
+
+    This is a reference implementation. You are free to copy, modify, or
+    redistribute.
+*/
+
+/*jslint evil: true, strict: false, regexp: false */
+
+/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
+    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
+    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
+    lastIndex, length, parse, prototype, push, replace, slice, stringify,
+    test, toJSON, toString, valueOf
+*/
+
+
+
+var JSON;
+if (!JSON) {
+    JSON = {};
+}
+
+(function () {
+    "use strict";
+
+    function f(n) {
+        return n < 10 ? '0' + n : n;
+    }
+
+    if (typeof Date.prototype.toJSON !== 'function') {
+
+        Date.prototype.toJSON = function (key) {
+
+            return isFinite(this.valueOf()) ?
+                this.getUTCFullYear()     + '-' +
+                f(this.getUTCMonth() + 1) + '-' +
+                f(this.getUTCDate())      + 'T' +
+                f(this.getUTCHours())     + ':' +
+                f(this.getUTCMinutes())   + ':' +
+                f(this.getUTCSeconds())   + 'Z' : null;
+        };
+
+        String.prototype.toJSON      =
+            Number.prototype.toJSON  =
+            Boolean.prototype.toJSON = function (key) {
+                return this.valueOf();
+            };
+    }
+
+    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        gap,
+        indent,
+        meta = {    // table of character substitutions
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        },
+        rep;
+
+
+    function quote(string) {
+
+
+        escapable.lastIndex = 0;
+        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+            var c = meta[a];
+            return typeof c === 'string' ? c :
+                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+        }) + '"' : '"' + string + '"';
+    }
+
+
+    function str(key, holder) {
+
+
+        var i,          // The loop counter.
+            k,          // The member key.
+            v,          // The member value.
+            length,
+            mind = gap,
+            partial,
+            value = holder[key];
+
+
+        if (value && typeof value === 'object' &&
+                typeof value.toJSON === 'function') {
+            value = value.toJSON(key);
+        }
+
+
+        if (typeof rep === 'function') {
+            value = rep.call(holder, key, value);
+        }
+
+
+        switch (typeof value) {
+        case 'string':
+            return quote(value);
+
+        case 'number':
+
+
+            return isFinite(value) ? String(value) : 'null';
+
+        case 'boolean':
+        case 'null':
+
+
+            return String(value);
+
+
+        case 'object':
+
+
+            if (!value) {
+                return 'null';
+            }
+
+
+            gap += indent;
+            partial = [];
+
+
+            if (Object.prototype.toString.apply(value) === '[object Array]') {
+
+
+                length = value.length;
+                for (i = 0; i < length; i += 1) {
+                    partial[i] = str(i, value) || 'null';
+                }
+
+
+                v = partial.length === 0 ? '[]' : gap ?
+                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
+                    '[' + partial.join(',') + ']';
+                gap = mind;
+                return v;
+            }
+
+
+            if (rep && typeof rep === 'object') {
+                length = rep.length;
+                for (i = 0; i < length; i += 1) {
+                    if (typeof rep[i] === 'string') {
+                        k = rep[i];
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            } else {
+
+
+                for (k in value) {
+                    if (Object.prototype.hasOwnProperty.call(value, k)) {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            }
+
+
+            v = partial.length === 0 ? '{}' : gap ?
+                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
+                '{' + partial.join(',') + '}';
+            gap = mind;
+            return v;
+        }
+    }
+
+
+    if (typeof JSON.stringify !== 'function') {
+        JSON.stringify = function (value, replacer, space) {
+
+
+            var i;
+            gap = '';
+            indent = '';
+
+
+            if (typeof space === 'number') {
+                for (i = 0; i < space; i += 1) {
+                    indent += ' ';
+                }
+
+
+            } else if (typeof space === 'string') {
+                indent = space;
+            }
+
+
+            rep = replacer;
+            if (replacer && typeof replacer !== 'function' &&
+                    (typeof replacer !== 'object' ||
+                    typeof replacer.length !== 'number')) {
+                throw new Error('JSON.stringify');
+            }
+
+
+            return str('', {'': value});
+        };
+    }
+
+
+
+    if (typeof JSON.parse !== 'function') {
+        JSON.parse = function (text, reviver) {
+
+
+            var j;
+
+            function walk(holder, key) {
+
+
+                var k, v, value = holder[key];
+                if (value && typeof value === 'object') {
+                    for (k in value) {
+                        if (Object.prototype.hasOwnProperty.call(value, k)) {
+                            v = walk(value, k);
+                            if (v !== undefined) {
+                                value[k] = v;
+                            } else {
+                                delete value[k];
+                            }
+                        }
+                    }
+                }
+                return reviver.call(holder, key, value);
+            }
+
+
+
+            text = String(text);
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+                text = text.replace(cx, function (a) {
+                    return '\\u' +
+                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+                });
+            }
+
+
+
+            if (/^[\],:{}\s]*$/
+                    .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+                        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+                        .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+
+
+                j = eval('(' + text + ')');
+
+
+                return typeof reviver === 'function' ?
+                    walk({'': j}, '') : j;
+            }
+
+
+            throw new SyntaxError('JSON.parse');
+        };
+    }
+}());
+/** Socket.IO 0.6.2 - Built with build.js */
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+var io = this.io = {
+	version: '0.6.2',
+
+	setPath: function(path){
+		if (window.console && console.error) console.error('io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf');
+		this.path = /\/$/.test(path) ? path : path + '/';
+    WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
+	}
+};
+
+if ('jQuery' in this) jQuery.io = this.io;
+
+if (typeof window != 'undefined'){
+  if (typeof WEB_SOCKET_SWF_LOCATION === 'undefined')
+    WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
+}
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var _pageLoaded = false;
+
+	io.util = {
+
+		ios: false,
+
+		load: function(fn){
+			if (/loaded|complete/.test(document.readyState) || _pageLoaded) return fn();
+			if ('attachEvent' in window){
+				window.attachEvent('onload', fn);
+			} else {
+				window.addEventListener('load', fn, false);
+			}
+		},
+
+		inherit: function(ctor, superCtor){
+			for (var i in superCtor.prototype){
+				ctor.prototype[i] = superCtor.prototype[i];
+			}
+		},
+
+		indexOf: function(arr, item, from){
+			for (var l = arr.length, i = (from < 0) ? Math.max(0, l + from) : from || 0; i < l; i++){
+				if (arr[i] === item) return i;
+			}
+			return -1;
+		},
+
+		isArray: function(obj){
+			return Object.prototype.toString.call(obj) === '[object Array]';
+		},
+
+    merge: function(target, additional){
+      for (var i in additional)
+        if (additional.hasOwnProperty(i))
+          target[i] = additional[i];
+    }
+
+	};
+
+	io.util.ios = /iphone|ipad/i.test(navigator.userAgent);
+	io.util.android = /android/i.test(navigator.userAgent);
+	io.util.opera = /opera/i.test(navigator.userAgent);
+
+	io.util.load(function(){
+		_pageLoaded = true;
+	});
+
+})();
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+
+(function(){
+	var io = this.io;
+
+	var frame = '~m~',
+
+	stringify = function(message){
+		if (Object.prototype.toString.call(message) == '[object Object]'){
+			if (!('JSON' in window)){
+				if ('console' in window && console.error) console.error('Trying to encode as JSON, but JSON.stringify is missing.');
+				return '{ "$error": "Invalid message" }';
+			}
+			return '~j~' + JSON.stringify(message);
+		} else {
+			return String(message);
+		}
+	};
+
+	Transport = io.Transport = function(base, options){
+		this.base = base;
+		this.options = {
+			timeout: 15000 // based on heartbeat interval default
+		};
+		io.util.merge(this.options, options);
+	};
+
+	Transport.prototype.send = function(){
+		throw new Error('Missing send() implementation');
+	};
+
+	Transport.prototype.connect = function(){
+		throw new Error('Missing connect() implementation');
+	};
+
+	Transport.prototype.disconnect = function(){
+		throw new Error('Missing disconnect() implementation');
+	};
+
+	Transport.prototype._encode = function(messages){
+		var ret = '', message,
+				messages = io.util.isArray(messages) ? messages : [messages];
+		for (var i = 0, l = messages.length; i < l; i++){
+			message = messages[i] === null || messages[i] === undefined ? '' : stringify(messages[i]);
+			ret += frame + message.length + frame + message;
+		}
+		return ret;
+	};
+
+	Transport.prototype._decode = function(data){
+		var messages = [], number, n;
+		do {
+			if (data.substr(0, 3) !== frame) return messages;
+			data = data.substr(3);
+			number = '', n = '';
+			for (var i = 0, l = data.length; i < l; i++){
+				n = Number(data.substr(i, 1));
+				if (data.substr(i, 1) == n){
+					number += n;
+				} else {
+					data = data.substr(number.length + frame.length);
+					number = Number(number);
+					break;
+				}
+			}
+			messages.push(data.substr(0, number)); // here
+			data = data.substr(number);
+		} while(data !== '');
+		return messages;
+	};
+
+	Transport.prototype._onData = function(data){
+		this._setTimeout();
+		var msgs = this._decode(data);
+		if (msgs && msgs.length){
+			for (var i = 0, l = msgs.length; i < l; i++){
+				this._onMessage(msgs[i]);
+			}
+		}
+	};
+
+	Transport.prototype._setTimeout = function(){
+		var self = this;
+		if (this._timeout) clearTimeout(this._timeout);
+		this._timeout = setTimeout(function(){
+			self._onTimeout();
+		}, this.options.timeout);
+	};
+
+	Transport.prototype._onTimeout = function(){
+		this._onDisconnect();
+	};
+
+	Transport.prototype._onMessage = function(message){
+		if (!this.sessionid){
+			this.sessionid = message;
+			this._onConnect();
+		} else if (message.substr(0, 3) == '~h~'){
+			this._onHeartbeat(message.substr(3));
+		} else if (message.substr(0, 3) == '~j~'){
+			this.base._onMessage(JSON.parse(message.substr(3)));
+		} else {
+			this.base._onMessage(message);
+		}
+	},
+
+	Transport.prototype._onHeartbeat = function(heartbeat){
+		this.send('~h~' + heartbeat); // echo
+	};
+
+	Transport.prototype._onConnect = function(){
+		this.connected = true;
+		this.connecting = false;
+		this.base._onConnect();
+		this._setTimeout();
+	};
+
+	Transport.prototype._onDisconnect = function(){
+		this.connecting = false;
+		this.connected = false;
+		this.sessionid = null;
+		this.base._onDisconnect();
+	};
+
+	Transport.prototype._prepareUrl = function(){
+		return (this.base.options.secure ? 'https' : 'http')
+			+ '://' + this.base.host
+			+ ':' + this.base.options.port
+			+ '/' + this.base.options.resource
+			+ '/' + this.type
+			+ (this.sessionid ? ('/' + this.sessionid) : '/');
+	};
+
+})();
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var empty = new Function,
+
+	XMLHttpRequestCORS = (function(){
+		if (!('XMLHttpRequest' in window)) return false;
+		var a = new XMLHttpRequest();
+		return a.withCredentials != undefined;
+	})(),
+
+	request = function(xdomain){
+		if ('XDomainRequest' in window && xdomain) return new XDomainRequest();
+		if ('XMLHttpRequest' in window && (!xdomain || XMLHttpRequestCORS)) return new XMLHttpRequest();
+		if (!xdomain){
+			try {
+				var a = new ActiveXObject('MSXML2.XMLHTTP');
+				return a;
+			} catch(e){}
+
+			try {
+				var b = new ActiveXObject('Microsoft.XMLHTTP');
+				return b;
+			} catch(e){}
+		}
+		return false;
+	},
+
+	XHR = io.Transport.XHR = function(){
+		io.Transport.apply(this, arguments);
+		this._sendBuffer = [];
+	};
+
+	io.util.inherit(XHR, io.Transport);
+
+	XHR.prototype.connect = function(){
+		this._get();
+		return this;
+	};
+
+	XHR.prototype._checkSend = function(){
+		if (!this._posting && this._sendBuffer.length){
+			var encoded = this._encode(this._sendBuffer);
+			this._sendBuffer = [];
+			this._send(encoded);
+		}
+	};
+
+	XHR.prototype.send = function(data){
+		if (io.util.isArray(data)){
+			this._sendBuffer.push.apply(this._sendBuffer, data);
+		} else {
+			this._sendBuffer.push(data);
+		}
+		this._checkSend();
+		return this;
+	};
+
+	XHR.prototype._send = function(data){
+		var self = this;
+		this._posting = true;
+		this._sendXhr = this._request('send', 'POST');
+		this._sendXhr.onreadystatechange = function(){
+			var status;
+			if (self._sendXhr.readyState == 4){
+				self._sendXhr.onreadystatechange = empty;
+				try { status = self._sendXhr.status; } catch(e){}
+				self._posting = false;
+				if (status == 200){
+					self._checkSend();
+				} else {
+					self._onDisconnect();
+				}
+			}
+		};
+		this._sendXhr.send('data=' + encodeURIComponent(data));
+	};
+
+	XHR.prototype.disconnect = function(){
+		this._onDisconnect();
+		return this;
+	};
+
+	XHR.prototype._onDisconnect = function(){
+		if (this._xhr){
+			this._xhr.onreadystatechange = empty;
+      try {
+        this._xhr.abort();
+      } catch(e){}
+			this._xhr = null;
+		}
+		if (this._sendXhr){
+      this._sendXhr.onreadystatechange = empty;
+      try {
+        this._sendXhr.abort();
+      } catch(e){}
+			this._sendXhr = null;
+		}
+		this._sendBuffer = [];
+		io.Transport.prototype._onDisconnect.call(this);
+	};
+
+	XHR.prototype._request = function(url, method, multipart){
+		var req = request(this.base._isXDomain());
+		if (multipart) req.multipart = true;
+		req.open(method || 'GET', this._prepareUrl() + (url ? '/' + url : ''));
+		if (method == 'POST' && 'setRequestHeader' in req){
+			req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded; charset=utf-8');
+		}
+		return req;
+	};
+
+	XHR.check = function(xdomain){
+		try {
+			if (request(xdomain)) return true;
+		} catch(e){}
+		return false;
+	};
+
+	XHR.xdomainCheck = function(){
+		return XHR.check(true);
+	};
+
+	XHR.request = request;
+
+})();
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var WS = io.Transport.websocket = function(){
+		io.Transport.apply(this, arguments);
+	};
+
+	io.util.inherit(WS, io.Transport);
+
+	WS.prototype.type = 'websocket';
+
+	WS.prototype.connect = function(){
+		var self = this;
+		this.socket = new WebSocket(this._prepareUrl());
+		this.socket.onmessage = function(ev){ self._onData(ev.data); };
+		this.socket.onclose = function(ev){ self._onClose(); };
+    this.socket.onerror = function(e){ self._onError(e); };
+		return this;
+	};
+
+	WS.prototype.send = function(data){
+		if (this.socket) this.socket.send(this._encode(data));
+		return this;
+	};
+
+	WS.prototype.disconnect = function(){
+		if (this.socket) this.socket.close();
+		return this;
+	};
+
+	WS.prototype._onClose = function(){
+		this._onDisconnect();
+		return this;
+	};
+
+  WS.prototype._onError = function(e){
+    this.base.emit('error', [e]);
+  };
+
+	WS.prototype._prepareUrl = function(){
+		return (this.base.options.secure ? 'wss' : 'ws')
+		+ '://' + this.base.host
+		+ ':' + this.base.options.port
+		+ '/' + this.base.options.resource
+		+ '/' + this.type
+		+ (this.sessionid ? ('/' + this.sessionid) : '');
+	};
+
+	WS.check = function(){
+		return 'WebSocket' in window && WebSocket.prototype && ( WebSocket.prototype.send && !!WebSocket.prototype.send.toString().match(/native/i)) && typeof WebSocket !== "undefined";
+	};
+
+	WS.xdomainCheck = function(){
+		return true;
+	};
+
+})();
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var Flashsocket = io.Transport.flashsocket = function(){
+		io.Transport.websocket.apply(this, arguments);
+	};
+
+	io.util.inherit(Flashsocket, io.Transport.websocket);
+
+	Flashsocket.prototype.type = 'flashsocket';
+
+	Flashsocket.prototype.connect = function(){
+		var self = this, args = arguments;
+		WebSocket.__addTask(function(){
+			io.Transport.websocket.prototype.connect.apply(self, args);
+		});
+		return this;
+	};
+
+	Flashsocket.prototype.send = function(){
+		var self = this, args = arguments;
+		WebSocket.__addTask(function(){
+			io.Transport.websocket.prototype.send.apply(self, args);
+		});
+		return this;
+	};
+
+	Flashsocket.check = function(){
+		if (typeof WebSocket == 'undefined' || !('__addTask' in WebSocket)) return false;
+		if (io.util.opera) return false; // opera is buggy with this transport
+		if ('navigator' in window && 'plugins' in navigator && navigator.plugins['Shockwave Flash']){
+			return !!navigator.plugins['Shockwave Flash'].description;
+	  }
+		if ('ActiveXObject' in window) {
+			try {
+				return !!new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version');
+			} catch (e) {}
+		}
+		return false;
+	};
+
+	Flashsocket.xdomainCheck = function(){
+		return true;
+	};
+
+})();
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var HTMLFile = io.Transport.htmlfile = function(){
+		io.Transport.XHR.apply(this, arguments);
+	};
+
+	io.util.inherit(HTMLFile, io.Transport.XHR);
+
+	HTMLFile.prototype.type = 'htmlfile';
+
+	HTMLFile.prototype._get = function(){
+		var self = this;
+		this._open();
+		window.attachEvent('onunload', function(){ self._destroy(); });
+	};
+
+	HTMLFile.prototype._open = function(){
+		this._doc = new ActiveXObject('htmlfile');
+		this._doc.open();
+		this._doc.write('<html></html>');
+		this._doc.parentWindow.s = this;
+		this._doc.close();
+
+		var _iframeC = this._doc.createElement('div');
+		this._doc.body.appendChild(_iframeC);
+		this._iframe = this._doc.createElement('iframe');
+		_iframeC.appendChild(this._iframe);
+		this._iframe.src = this._prepareUrl() + '/' + (+ new Date);
+	};
+
+	HTMLFile.prototype._ = function(data, doc){
+		this._onData(data);
+		var script = doc.getElementsByTagName('script')[0];
+		script.parentNode.removeChild(script);
+	};
+
+  HTMLFile.prototype._destroy = function(){
+    if (this._iframe){
+      this._iframe.src = 'about:blank';
+      this._doc = null;
+      CollectGarbage();
+    }
+  };
+
+	HTMLFile.prototype.disconnect = function(){
+		this._destroy();
+		return io.Transport.XHR.prototype.disconnect.call(this);
+	};
+
+	HTMLFile.check = function(){
+		if ('ActiveXObject' in window){
+			try {
+				var a = new ActiveXObject('htmlfile');
+				return a && io.Transport.XHR.check();
+			} catch(e){}
+		}
+		return false;
+	};
+
+	HTMLFile.xdomainCheck = function(){
+		return false;
+	};
+
+})();
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var XHRMultipart = io.Transport['xhr-multipart'] = function(){
+		io.Transport.XHR.apply(this, arguments);
+	};
+
+	io.util.inherit(XHRMultipart, io.Transport.XHR);
+
+	XHRMultipart.prototype.type = 'xhr-multipart';
+
+	XHRMultipart.prototype._get = function(){
+		var self = this;
+		this._xhr = this._request('', 'GET', true);
+		this._xhr.onreadystatechange = function(){
+			if (self._xhr.readyState == 4) self._onData(self._xhr.responseText);
+		};
+		this._xhr.send(null);
+	};
+
+	XHRMultipart.check = function(){
+		return 'XMLHttpRequest' in window && 'prototype' in XMLHttpRequest && 'multipart' in XMLHttpRequest.prototype;
+	};
+
+	XHRMultipart.xdomainCheck = function(){
+		return true;
+	};
+
+})();
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var empty = new Function(),
+
+	XHRPolling = io.Transport['xhr-polling'] = function(){
+		io.Transport.XHR.apply(this, arguments);
+	};
+
+	io.util.inherit(XHRPolling, io.Transport.XHR);
+
+	XHRPolling.prototype.type = 'xhr-polling';
+
+	XHRPolling.prototype.connect = function(){
+		if (io.util.ios || io.util.android){
+			var self = this;
+			io.util.load(function(){
+				setTimeout(function(){
+					io.Transport.XHR.prototype.connect.call(self);
+				}, 10);
+			});
+		} else {
+			io.Transport.XHR.prototype.connect.call(this);
+		}
+	};
+
+	XHRPolling.prototype._get = function(){
+		var self = this;
+		this._xhr = this._request(+ new Date, 'GET');
+    this._xhr.onreadystatechange = function(){
+      var status;
+      if (self._xhr.readyState == 4){
+        self._xhr.onreadystatechange = empty;
+        try { status = self._xhr.status; } catch(e){}
+        if (status == 200){
+          self._onData(self._xhr.responseText);
+          self._get();
+        } else {
+          self._onDisconnect();
+        }
+      }
+    };
+		this._xhr.send(null);
+	};
+
+	XHRPolling.check = function(){
+		return io.Transport.XHR.check();
+	};
+
+	XHRPolling.xdomainCheck = function(){
+		return io.Transport.XHR.xdomainCheck();
+	};
+
+})();
+
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	io.JSONP = [];
+
+	JSONPPolling = io.Transport['jsonp-polling'] = function(){
+		io.Transport.XHR.apply(this, arguments);
+		this._insertAt = document.getElementsByTagName('script')[0];
+		this._index = io.JSONP.length;
+		io.JSONP.push(this);
+	};
+
+	io.util.inherit(JSONPPolling, io.Transport['xhr-polling']);
+
+	JSONPPolling.prototype.type = 'jsonp-polling';
+
+	JSONPPolling.prototype._send = function(data){
+		var self = this;
+		if (!('_form' in this)){
+			var form = document.createElement('FORM'),
+				area = document.createElement('TEXTAREA'),
+				id = this._iframeId = 'socket_io_iframe_' + this._index,
+				iframe;
+
+			form.style.position = 'absolute';
+			form.style.top = '-1000px';
+			form.style.left = '-1000px';
+			form.target = id;
+			form.method = 'POST';
+			form.action = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+			area.name = 'data';
+			form.appendChild(area);
+			this._insertAt.parentNode.insertBefore(form, this._insertAt);
+			document.body.appendChild(form);
+
+			this._form = form;
+			this._area = area;
+		}
+
+		function complete(){
+			initIframe();
+			self._posting = false;
+			self._checkSend();
+		};
+
+		function initIframe(){
+			if (self._iframe){
+				self._form.removeChild(self._iframe);
+			}
+
+			try {
+				iframe = document.createElement('<iframe name="'+ self._iframeId +'">');
+			} catch(e){
+				iframe = document.createElement('iframe');
+				iframe.name = self._iframeId;
+			}
+
+			iframe.id = self._iframeId;
+
+			self._form.appendChild(iframe);
+			self._iframe = iframe;
+		};
+
+		initIframe();
+
+		this._posting = true;
+		this._area.value = data;
+
+		try {
+			this._form.submit();
+		} catch(e){}
+
+		if (this._iframe.attachEvent){
+			iframe.onreadystatechange = function(){
+				if (self._iframe.readyState == 'complete') complete();
+			};
+		} else {
+			this._iframe.onload = complete;
+		}
+	};
+
+	JSONPPolling.prototype._get = function(){
+		var self = this,
+				script = document.createElement('SCRIPT');
+		if (this._script){
+			this._script.parentNode.removeChild(this._script);
+			this._script = null;
+		}
+		script.async = true;
+		script.src = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+		script.onerror = function(){
+			self._onDisconnect();
+		};
+		this._insertAt.parentNode.insertBefore(script, this._insertAt);
+		this._script = script;
+	};
+
+	JSONPPolling.prototype._ = function(){
+		this._onData.apply(this, arguments);
+		this._get();
+		return this;
+	};
+
+	JSONPPolling.check = function(){
+		return true;
+	};
+
+	JSONPPolling.xdomainCheck = function(){
+		return true;
+	};
+})();
+/**
+ * Socket.IO client
+ *
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
+
+	var Socket = io.Socket = function(host, options){
+		this.host = host || document.domain;
+		this.options = {
+			secure: false,
+			document: document,
+			port: document.location.port || 80,
+			resource: 'socket.io',
+			transports: ['websocket', 'flashsocket', 'htmlfile', 'xhr-multipart', 'xhr-polling', 'jsonp-polling'],
+			transportOptions: {
+				'xhr-polling': {
+					timeout: 25000 // based on polling duration default
+				},
+				'jsonp-polling': {
+					timeout: 25000
+				}
+			},
+			connectTimeout: 5000,
+			reconnect: true,
+			reconnectionDelay: 500,
+			maxReconnectionAttempts: 10,
+			tryTransportsOnConnectTimeout: true,
+			rememberTransport: true
+		};
+		io.util.merge(this.options, options);
+		this.connected = false;
+		this.connecting = false;
+		this._events = {};
+		this.transport = this.getTransport();
+		if (!this.transport && 'console' in window) console.error('No transport available');
+	};
+
+	Socket.prototype.getTransport = function(override){
+		var transports = override || this.options.transports, match;
+		if (this.options.rememberTransport && !override){
+			match = this.options.document.cookie.match('(?:^|;)\\s*socketio=([^;]*)');
+			if (match){
+				this._rememberedTransport = true;
+				transports = [decodeURIComponent(match[1])];
+			}
+		}
+		for (var i = 0, transport; transport = transports[i]; i++){
+			if (io.Transport[transport]
+				&& io.Transport[transport].check()
+				&& (!this._isXDomain() || io.Transport[transport].xdomainCheck())){
+				return new io.Transport[transport](this, this.options.transportOptions[transport] || {});
+			}
+		}
+		return null;
+	};
+
+	Socket.prototype.connect = function(){
+		if (this.transport && !this.connected){
+			if (this.connecting) this.disconnect(true);
+			this.connecting = true;
+			this.emit('connecting', [this.transport.type]);
+			this.transport.connect();
+			if (this.options.connectTimeout){
+				var self = this;
+				this.connectTimeoutTimer = setTimeout(function(){
+					if (!self.connected){
+						self.disconnect(true);
+						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
+							if(!self._remainingTransports) self._remainingTransports = self.options.transports.slice(0);
+							var transports = self._remainingTransports;
+							while(transports.length > 0 && transports.splice(0,1)[0] != self.transport.type){}
+							if(transports.length){
+								self.transport = self.getTransport(transports);
+								self.connect();
+							}
+						}
+						if(!self._remainingTransports || self._remainingTransports.length == 0) self.emit('connect_failed');
+					}
+					if(self._remainingTransports && self._remainingTransports.length == 0) delete self._remainingTransports;
+				}, this.options.connectTimeout);
+			}
+		}
+		return this;
+	};
+
+	Socket.prototype.send = function(data){
+		if (!this.transport || !this.transport.connected) return this._queue(data);
+		this.transport.send(data);
+		return this;
+	};
+
+	Socket.prototype.disconnect = function(reconnect){
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
+		if (!reconnect) this.options.reconnect = false;
+		this.transport.disconnect();
+		return this;
+	};
+
+	Socket.prototype.on = function(name, fn){
+		if (!(name in this._events)) this._events[name] = [];
+		this._events[name].push(fn);
+		return this;
+	};
+
+  Socket.prototype.emit = function(name, args){
+    if (name in this._events){
+      var events = this._events[name].concat();
+      for (var i = 0, ii = events.length; i < ii; i++)
+        events[i].apply(this, args === undefined ? [] : args);
+    }
+    return this;
+  };
+
+	Socket.prototype.removeEvent = function(name, fn){
+		if (name in this._events){
+			for (var a = 0, l = this._events[name].length; a < l; a++)
+				if (this._events[name][a] == fn) this._events[name].splice(a, 1);
+		}
+		return this;
+	};
+
+	Socket.prototype._queue = function(message){
+		if (!('_queueStack' in this)) this._queueStack = [];
+		this._queueStack.push(message);
+		return this;
+	};
+
+	Socket.prototype._doQueue = function(){
+		if (!('_queueStack' in this) || !this._queueStack.length) return this;
+		this.transport.send(this._queueStack);
+		this._queueStack = [];
+		return this;
+	};
+
+	Socket.prototype._isXDomain = function(){
+    var locPort = window.location.port || 80;
+		return this.host !== document.domain || this.options.port != locPort;
+	};
+
+	Socket.prototype._onConnect = function(){
+		this.connected = true;
+		this.connecting = false;
+		this._doQueue();
+		if (this.options.rememberTransport) this.options.document.cookie = 'socketio=' + encodeURIComponent(this.transport.type);
+		this.emit('connect');
+	};
+
+	Socket.prototype._onMessage = function(data){
+		this.emit('message', [data]);
+	};
+
+	Socket.prototype._onDisconnect = function(){
+		var wasConnected = this.connected;
+		this.connected = false;
+		this.connecting = false;
+		this._queueStack = [];
+		if (wasConnected){
+			this.emit('disconnect');
+			if (this.options.reconnect && !this.reconnecting) this._onReconnect();
+		}
+	};
+
+	Socket.prototype._onReconnect = function(){
+		this.reconnecting = true;
+		this.reconnectionAttempts = 0;
+		this.reconnectionDelay = this.options.reconnectionDelay;
+
+		var self = this
+			, tryTransportsOnConnectTimeout = this.options.tryTransportsOnConnectTimeout
+			, rememberTransport = this.options.rememberTransport;
+
+		function reset(){
+			if(self.connected) self.emit('reconnect',[self.transport.type,self.reconnectionAttempts]);
+			self.removeEvent('connect_failed', maybeReconnect).removeEvent('connect', maybeReconnect);
+			delete self.reconnecting;
+			delete self.reconnectionAttempts;
+			delete self.reconnectionDelay;
+			delete self.reconnectionTimer;
+			delete self.redoTransports;
+			self.options.tryTransportsOnConnectTimeout = tryTransportsOnConnectTimeout;
+			self.options.rememberTransport = rememberTransport;
+
+			return;
+		};
+
+		function maybeReconnect(){
+			if (!self.reconnecting) return;
+			if (!self.connected){
+				if (self.connecting && self.reconnecting) return self.reconnectionTimer = setTimeout(maybeReconnect, 1000);
+
+				if (self.reconnectionAttempts++ >= self.options.maxReconnectionAttempts){
+					if (!self.redoTransports){
+						self.on('connect_failed', maybeReconnect);
+						self.options.tryTransportsOnConnectTimeout = true;
+						self.transport = self.getTransport(self.options.transports); // overwrite with all enabled transports
+						self.redoTransports = true;
+						self.connect();
+					} else {
+						self.emit('reconnect_failed');
+						reset();
+					}
+				} else {
+					self.reconnectionDelay *= 2; // exponential backoff
+					self.connect();
+					self.emit('reconnecting', [self.reconnectionDelay,self.reconnectionAttempts]);
+					self.reconnectionTimer = setTimeout(maybeReconnect, self.reconnectionDelay);
+				}
+			} else {
+				reset();
+			}
+		};
+		this.options.tryTransportsOnConnectTimeout = false;
+		this.reconnectionTimer = setTimeout(maybeReconnect, this.reconnectionDelay);
+
+		this.on('connect', maybeReconnect);
+	};
+
+  Socket.prototype.fire = Socket.prototype.emit;
+	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
+	Socket.prototype.removeListener = Socket.prototype.removeEventListener = Socket.prototype.removeEvent;
+
+})();
+/*	SWFObject v2.2 <http://code.google.com/p/swfobject/>
+	is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
+*/
+var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="ShockwaveFlash.ShockwaveFlash",q="application/x-shockwave-flash",R="SWFObjectExprInst",x="onreadystatechange",O=window,j=document,t=navigator,T=false,U=[h],o=[],N=[],I=[],l,Q,E,B,J=false,a=false,n,G,m=true,M=function(){var aa=typeof j.getElementById!=D&&typeof j.getElementsByTagName!=D&&typeof j.createElement!=D,ah=t.userAgent.toLowerCase(),Y=t.platform.toLowerCase(),ae=Y?/win/.test(Y):/win/.test(ah),ac=Y?/mac/.test(Y):/mac/.test(ah),af=/webkit/.test(ah)?parseFloat(ah.replace(/^.*webkit\/(\d+(\.\d+)?).*$/,"$1")):false,X=!+"\v1",ag=[0,0,0],ab=null;if(typeof t.plugins!=D&&typeof t.plugins[S]==r){ab=t.plugins[S].description;if(ab&&!(typeof t.mimeTypes!=D&&t.mimeTypes[q]&&!t.mimeTypes[q].enabledPlugin)){T=true;X=false;ab=ab.replace(/^.*\s+(\S+\s+\S+$)/,"$1");ag[0]=parseInt(ab.replace(/^(.*)\..*$/,"$1"),10);ag[1]=parseInt(ab.replace(/^.*\.(.*)\s.*$/,"$1"),10);ag[2]=/[a-zA-Z]/.test(ab)?parseInt(ab.replace(/^.*[a-zA-Z]+(.*)$/,"$1"),10):0}}else{if(typeof O.ActiveXObject!=D){try{var ad=new ActiveXObject(W);if(ad){ab=ad.GetVariable("$version");if(ab){X=true;ab=ab.split(" ")[1].split(",");ag=[parseInt(ab[0],10),parseInt(ab[1],10),parseInt(ab[2],10)]}}}catch(Z){}}}return{w3:aa,pv:ag,wk:af,ie:X,win:ae,mac:ac}}(),k=function(){if(!M.w3){return}if((typeof j.readyState!=D&&j.readyState=="complete")||(typeof j.readyState==D&&(j.getElementsByTagName("body")[0]||j.body))){f()}if(!J){if(typeof j.addEventListener!=D){j.addEventListener("DOMContentLoaded",f,false)}if(M.ie&&M.win){j.attachEvent(x,function(){if(j.readyState=="complete"){j.detachEvent(x,arguments.callee);f()}});if(O==top){(function(){if(J){return}try{j.documentElement.doScroll("left")}catch(X){setTimeout(arguments.callee,0);return}f()})()}}if(M.wk){(function(){if(J){return}if(!/loaded|complete/.test(j.readyState)){setTimeout(arguments.callee,0);return}f()})()}s(f)}}();function f(){if(J){return}try{var Z=j.getElementsByTagName("body")[0].appendChild(C("span"));Z.parentNode.removeChild(Z)}catch(aa){return}J=true;var X=U.length;for(var Y=0;Y<X;Y++){U[Y]()}}function K(X){if(J){X()}else{U[U.length]=X}}function s(Y){if(typeof O.addEventListener!=D){O.addEventListener("load",Y,false)}else{if(typeof j.addEventListener!=D){j.addEventListener("load",Y,false)}else{if(typeof O.attachEvent!=D){i(O,"onload",Y)}else{if(typeof O.onload=="function"){var X=O.onload;O.onload=function(){X();Y()}}else{O.onload=Y}}}}}function h(){if(T){V()}else{H()}}function V(){var X=j.getElementsByTagName("body")[0];var aa=C(r);aa.setAttribute("type",q);var Z=X.appendChild(aa);if(Z){var Y=0;(function(){if(typeof Z.GetVariable!=D){var ab=Z.GetVariable("$version");if(ab){ab=ab.split(" ")[1].split(",");M.pv=[parseInt(ab[0],10),parseInt(ab[1],10),parseInt(ab[2],10)]}}else{if(Y<10){Y++;setTimeout(arguments.callee,10);return}}X.removeChild(aa);Z=null;H()})()}else{H()}}function H(){var ag=o.length;if(ag>0){for(var af=0;af<ag;af++){var Y=o[af].id;var ab=o[af].callbackFn;var aa={success:false,id:Y};if(M.pv[0]>0){var ae=c(Y);if(ae){if(F(o[af].swfVersion)&&!(M.wk&&M.wk<312)){w(Y,true);if(ab){aa.success=true;aa.ref=z(Y);ab(aa)}}else{if(o[af].expressInstall&&A()){var ai={};ai.data=o[af].expressInstall;ai.width=ae.getAttribute("width")||"0";ai.height=ae.getAttribute("height")||"0";if(ae.getAttribute("class")){ai.styleclass=ae.getAttribute("class")}if(ae.getAttribute("align")){ai.align=ae.getAttribute("align")}var ah={};var X=ae.getElementsByTagName("param");var ac=X.length;for(var ad=0;ad<ac;ad++){if(X[ad].getAttribute("name").toLowerCase()!="movie"){ah[X[ad].getAttribute("name")]=X[ad].getAttribute("value")}}P(ai,ah,Y,ab)}else{p(ae);if(ab){ab(aa)}}}}}else{w(Y,true);if(ab){var Z=z(Y);if(Z&&typeof Z.SetVariable!=D){aa.success=true;aa.ref=Z}ab(aa)}}}}}function z(aa){var X=null;var Y=c(aa);if(Y&&Y.nodeName=="OBJECT"){if(typeof Y.SetVariable!=D){X=Y}else{var Z=Y.getElementsByTagName(r)[0];if(Z){X=Z}}}return X}function A(){return !a&&F("6.0.65")&&(M.win||M.mac)&&!(M.wk&&M.wk<312)}function P(aa,ab,X,Z){a=true;E=Z||null;B={success:false,id:X};var ae=c(X);if(ae){if(ae.nodeName=="OBJECT"){l=g(ae);Q=null}else{l=ae;Q=X}aa.id=R;if(typeof aa.width==D||(!/%$/.test(aa.width)&&parseInt(aa.width,10)<310)){aa.width="310"}if(typeof aa.height==D||(!/%$/.test(aa.height)&&parseInt(aa.height,10)<137)){aa.height="137"}j.title=j.title.slice(0,47)+" - Flash Player Installation";var ad=M.ie&&M.win?"ActiveX":"PlugIn",ac="MMredirectURL="+O.location.toString().replace(/&/g,"%26")+"&MMplayerType="+ad+"&MMdoctitle="+j.title;if(typeof ab.flashvars!=D){ab.flashvars+="&"+ac}else{ab.flashvars=ac}if(M.ie&&M.win&&ae.readyState!=4){var Y=C("div");X+="SWFObjectNew";Y.setAttribute("id",X);ae.parentNode.insertBefore(Y,ae);ae.style.display="none";(function(){if(ae.readyState==4){ae.parentNode.removeChild(ae)}else{setTimeout(arguments.callee,10)}})()}u(aa,ab,X)}}function p(Y){if(M.ie&&M.win&&Y.readyState!=4){var X=C("div");Y.parentNode.insertBefore(X,Y);X.parentNode.replaceChild(g(Y),X);Y.style.display="none";(function(){if(Y.readyState==4){Y.parentNode.removeChild(Y)}else{setTimeout(arguments.callee,10)}})()}else{Y.parentNode.replaceChild(g(Y),Y)}}function g(ab){var aa=C("div");if(M.win&&M.ie){aa.innerHTML=ab.innerHTML}else{var Y=ab.getElementsByTagName(r)[0];if(Y){var ad=Y.childNodes;if(ad){var X=ad.length;for(var Z=0;Z<X;Z++){if(!(ad[Z].nodeType==1&&ad[Z].nodeName=="PARAM")&&!(ad[Z].nodeType==8)){aa.appendChild(ad[Z].cloneNode(true))}}}}}return aa}function u(ai,ag,Y){var X,aa=c(Y);if(M.wk&&M.wk<312){return X}if(aa){if(typeof ai.id==D){ai.id=Y}if(M.ie&&M.win){var ah="";for(var ae in ai){if(ai[ae]!=Object.prototype[ae]){if(ae.toLowerCase()=="data"){ag.movie=ai[ae]}else{if(ae.toLowerCase()=="styleclass"){ah+=' class="'+ai[ae]+'"'}else{if(ae.toLowerCase()!="classid"){ah+=" "+ae+'="'+ai[ae]+'"'}}}}}var af="";for(var ad in ag){if(ag[ad]!=Object.prototype[ad]){af+='<param name="'+ad+'" value="'+ag[ad]+'" />'}}aa.outerHTML='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"'+ah+">"+af+"</object>";N[N.length]=ai.id;X=c(ai.id)}else{var Z=C(r);Z.setAttribute("type",q);for(var ac in ai){if(ai[ac]!=Object.prototype[ac]){if(ac.toLowerCase()=="styleclass"){Z.setAttribute("class",ai[ac])}else{if(ac.toLowerCase()!="classid"){Z.setAttribute(ac,ai[ac])}}}}for(var ab in ag){if(ag[ab]!=Object.prototype[ab]&&ab.toLowerCase()!="movie"){e(Z,ab,ag[ab])}}aa.parentNode.replaceChild(Z,aa);X=Z}}return X}function e(Z,X,Y){var aa=C("param");aa.setAttribute("name",X);aa.setAttribute("value",Y);Z.appendChild(aa)}function y(Y){var X=c(Y);if(X&&X.nodeName=="OBJECT"){if(M.ie&&M.win){X.style.display="none";(function(){if(X.readyState==4){b(Y)}else{setTimeout(arguments.callee,10)}})()}else{X.parentNode.removeChild(X)}}}function b(Z){var Y=c(Z);if(Y){for(var X in Y){if(typeof Y[X]=="function"){Y[X]=null}}Y.parentNode.removeChild(Y)}}function c(Z){var X=null;try{X=j.getElementById(Z)}catch(Y){}return X}function C(X){return j.createElement(X)}function i(Z,X,Y){Z.attachEvent(X,Y);I[I.length]=[Z,X,Y]}function F(Z){var Y=M.pv,X=Z.split(".");X[0]=parseInt(X[0],10);X[1]=parseInt(X[1],10)||0;X[2]=parseInt(X[2],10)||0;return(Y[0]>X[0]||(Y[0]==X[0]&&Y[1]>X[1])||(Y[0]==X[0]&&Y[1]==X[1]&&Y[2]>=X[2]))?true:false}function v(ac,Y,ad,ab){if(M.ie&&M.mac){return}var aa=j.getElementsByTagName("head")[0];if(!aa){return}var X=(ad&&typeof ad=="string")?ad:"screen";if(ab){n=null;G=null}if(!n||G!=X){var Z=C("style");Z.setAttribute("type","text/css");Z.setAttribute("media",X);n=aa.appendChild(Z);if(M.ie&&M.win&&typeof j.styleSheets!=D&&j.styleSheets.length>0){n=j.styleSheets[j.styleSheets.length-1]}G=X}if(M.ie&&M.win){if(n&&typeof n.addRule==r){n.addRule(ac,Y)}}else{if(n&&typeof j.createTextNode!=D){n.appendChild(j.createTextNode(ac+" {"+Y+"}"))}}}function w(Z,X){if(!m){return}var Y=X?"visible":"hidden";if(J&&c(Z)){c(Z).style.visibility=Y}else{v("#"+Z,"visibility:"+Y)}}function L(Y){var Z=/[\\\"<>\.;]/;var X=Z.exec(Y)!=null;return X&&typeof encodeURIComponent!=D?encodeURIComponent(Y):Y}var d=function(){if(M.ie&&M.win){window.attachEvent("onunload",function(){var ac=I.length;for(var ab=0;ab<ac;ab++){I[ab][0].detachEvent(I[ab][1],I[ab][2])}var Z=N.length;for(var aa=0;aa<Z;aa++){y(N[aa])}for(var Y in M){M[Y]=null}M=null;for(var X in swfobject){swfobject[X]=null}swfobject=null})}}();return{registerObject:function(ab,X,aa,Z){if(M.w3&&ab&&X){var Y={};Y.id=ab;Y.swfVersion=X;Y.expressInstall=aa;Y.callbackFn=Z;o[o.length]=Y;w(ab,false)}else{if(Z){Z({success:false,id:ab})}}},getObjectById:function(X){if(M.w3){return z(X)}},embedSWF:function(ab,ah,ae,ag,Y,aa,Z,ad,af,ac){var X={success:false,id:ah};if(M.w3&&!(M.wk&&M.wk<312)&&ab&&ah&&ae&&ag&&Y){w(ah,false);K(function(){ae+="";ag+="";var aj={};if(af&&typeof af===r){for(var al in af){aj[al]=af[al]}}aj.data=ab;aj.width=ae;aj.height=ag;var am={};if(ad&&typeof ad===r){for(var ak in ad){am[ak]=ad[ak]}}if(Z&&typeof Z===r){for(var ai in Z){if(typeof am.flashvars!=D){am.flashvars+="&"+ai+"="+Z[ai]}else{am.flashvars=ai+"="+Z[ai]}}}if(F(Y)){var an=u(aj,am,ah);if(aj.id==ah){w(ah,true)}X.success=true;X.ref=an}else{if(aa&&A()){aj.data=aa;P(aj,am,ah,ac);return}else{w(ah,true)}}if(ac){ac(X)}})}else{if(ac){ac(X)}}},switchOffAutoHideShow:function(){m=false},ua:M,getFlashPlayerVersion:function(){return{major:M.pv[0],minor:M.pv[1],release:M.pv[2]}},hasFlashPlayerVersion:F,createSWF:function(Z,Y,X){if(M.w3){return u(Z,Y,X)}else{return undefined}},showExpressInstall:function(Z,aa,X,Y){if(M.w3&&A()){P(Z,aa,X,Y)}},removeSWF:function(X){if(M.w3){y(X)}},createCSS:function(aa,Z,Y,X){if(M.w3){v(aa,Z,Y,X)}},addDomLoadEvent:K,addLoadEvent:s,getQueryParamValue:function(aa){var Z=j.location.search||j.location.hash;if(Z){if(/\?/.test(Z)){Z=Z.split("?")[1]}if(aa==null){return L(Z)}var Y=Z.split("&");for(var X=0;X<Y.length;X++){if(Y[X].substring(0,Y[X].indexOf("="))==aa){return L(Y[X].substring((Y[X].indexOf("=")+1)))}}}return""},expressInstallCallback:function(){if(a){var X=c(R);if(X&&l){X.parentNode.replaceChild(l,X);if(Q){w(Q,true);if(M.ie&&M.win){l.style.display="block"}}if(E){E(B)}}a=false}}}}();
+
+(function() {
+
+  if (window.WebSocket) return;
+
+  var console = window.console;
+  if (!console || !console.log || !console.error) {
+    console = {log: function(){ }, error: function(){ }};
+  }
+
+  if (!swfobject.hasFlashPlayerVersion("10.0.0")) {
+    console.error("Flash Player >= 10.0.0 is required.");
+    return;
+  }
+  if (location.protocol == "file:") {
+    console.error(
+      "WARNING: web-socket-js doesn't work in file:///... URL " +
+      "unless you set Flash Security Settings properly. " +
+      "Open the page via Web server i.e. http://...");
+  }
+
+  /**
+   * This class represents a faux web socket.
+   * @param {string} url
+   * @param {string} protocol
+   * @param {string} proxyHost
+   * @param {int} proxyPort
+   * @param {string} headers
+   */
+  WebSocket = function(url, protocol, proxyHost, proxyPort, headers) {
+    var self = this;
+    self.__id = WebSocket.__nextId++;
+    WebSocket.__instances[self.__id] = self;
+    self.readyState = WebSocket.CONNECTING;
+    self.bufferedAmount = 0;
+    setTimeout(function() {
+      WebSocket.__addTask(function() {
+        WebSocket.__flash.create(
+            self.__id, url, protocol, proxyHost || null, proxyPort || 0, headers || null);
+      });
+    }, 0);
+  };
+
+  /**
+   * Send data to the web socket.
+   * @param {string} data  The data to send to the socket.
+   * @return {boolean}  True for success, false for failure.
+   */
+  WebSocket.prototype.send = function(data) {
+    if (this.readyState == WebSocket.CONNECTING) {
+      throw "INVALID_STATE_ERR: Web Socket connection has not been established";
+    }
+    var result = WebSocket.__flash.send(this.__id, encodeURIComponent(data));
+    if (result < 0) { // success
+      return true;
+    } else {
+      this.bufferedAmount += result;
+      return false;
+    }
+  };
+
+  /**
+   * Close this web socket gracefully.
+   */
+  WebSocket.prototype.close = function() {
+    if (this.readyState == WebSocket.CLOSED || this.readyState == WebSocket.CLOSING) {
+      return;
+    }
+    this.readyState = WebSocket.CLOSING;
+    WebSocket.__flash.close(this.__id);
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture !NB Not implemented yet
+   * @return void
+   */
+  WebSocket.prototype.addEventListener = function(type, listener, useCapture) {
+    if (!('__events' in this)) {
+      this.__events = {};
+    }
+    if (!(type in this.__events)) {
+      this.__events[type] = [];
+      if ('function' == typeof this['on' + type]) {
+        this.__events[type].defaultHandler = this['on' + type];
+        this['on' + type] = this.__createEventHandler(this, type);
+      }
+    }
+    this.__events[type].push(listener);
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture NB! Not implemented yet
+   * @return void
+   */
+  WebSocket.prototype.removeEventListener = function(type, listener, useCapture) {
+    if (!('__events' in this)) {
+      this.__events = {};
+    }
+    if (!(type in this.__events)) return;
+    for (var i = this.__events.length; i > -1; --i) {
+      if (listener === this.__events[type][i]) {
+        this.__events[type].splice(i, 1);
+        break;
+      }
+    }
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {WebSocketEvent} event
+   * @return void
+   */
+  WebSocket.prototype.dispatchEvent = function(event) {
+    if (!('__events' in this)) throw 'UNSPECIFIED_EVENT_TYPE_ERR';
+    if (!(event.type in this.__events)) throw 'UNSPECIFIED_EVENT_TYPE_ERR';
+
+    for (var i = 0, l = this.__events[event.type].length; i < l; ++ i) {
+      this.__events[event.type][i](event);
+      if (event.cancelBubble) break;
+    }
+
+    if (false !== event.returnValue &&
+      'function' == typeof this.__events[event.type].defaultHandler)
+    {
+      this.__events[event.type].defaultHandler(event);
+    }
+  };
+
+  /**
+   * Handle an event from flash.  Do any websocket-specific
+   * handling before passing the event off to the event handlers.
+   * @param {Object} event
+   */
+  WebSocket.prototype.__handleEvent = function(event) {
+    if ("readyState" in event) {
+      this.readyState = event.readyState;
+    }
+
+    try {
+      if (event.type == "open") {
+        this.onopen && this.onopen();
+      } else if (event.type == "close") {
+        this.onclose && this.onclose();
+      } else if (event.type == "error") {
+        this.onerror && this.onerror(event);
+      } else if (event.type == "message") {
+        if (this.onmessage) {
+          var data = decodeURIComponent(event.message);
+          var e;
+          if (window.MessageEvent && !window.opera) {
+            e = document.createEvent("MessageEvent");
+            e.initMessageEvent("message", false, false, data, null, null, window, null);
+          } else {
+            e = {data: data};
+          }
+          this.onmessage(e);
+        }
+
+      } else {
+        throw "unknown event type: " + event.type;
+      }
+    } catch (e) {
+      console.error(e.toString());
+    }
+  };
+
+  /**
+   * @param {object} object
+   * @param {string} type
+   */
+  WebSocket.prototype.__createEventHandler = function(object, type) {
+    return function(data) {
+      var event = new WebSocketEvent();
+      event.initEvent(type, true, true);
+      event.target = event.currentTarget = object;
+      for (var key in data) {
+        event[key] = data[key];
+      }
+      object.dispatchEvent(event, arguments);
+    };
+  };
+
+  /**
+   * Define the WebSocket readyState enumeration.
+   */
+  WebSocket.CONNECTING = 0;
+  WebSocket.OPEN = 1;
+  WebSocket.CLOSING = 2;
+  WebSocket.CLOSED = 3;
+
+  WebSocket.__flash = null;
+  WebSocket.__instances = {};
+  WebSocket.__tasks = [];
+  WebSocket.__nextId = 0;
+
+  /**
+   * Loads WebSocketMain.swf and creates WebSocketMain object in Flash.
+   */
+  WebSocket.__initialize = function() {
+    if (WebSocket.__flash) return;
+
+    if (WebSocket.__swfLocation) {
+      window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
+    }
+    if (!window.WEB_SOCKET_SWF_LOCATION) {
+      console.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
+      return;
+    }
+    var container = document.createElement("div");
+    container.id = "webSocketContainer";
+    container.style.position = "absolute";
+    if (WebSocket.__isFlashLite()) {
+      container.style.left = "0px";
+      container.style.top = "0px";
+    } else {
+      container.style.left = "-100px";
+      container.style.top = "-100px";
+    }
+    var holder = document.createElement("div");
+    holder.id = "webSocketFlash";
+    container.appendChild(holder);
+    document.body.appendChild(container);
+    swfobject.embedSWF(
+      WEB_SOCKET_SWF_LOCATION,
+      "webSocketFlash",
+      "1" /* width */,
+      "1" /* height */,
+      "10.0.0" /* SWF version */,
+      null,
+      null,
+      {hasPriority: true, swliveconnect : true, allowScriptAccess: "always"},
+      null,
+      function(e) {
+        if (!e.success) {
+          console.error("[WebSocket] swfobject.embedSWF failed");
+        }
+      });
+  };
+
+  /**
+   * Load a new flash security policy file.
+   * @param {string} url
+   */
+  WebSocket.loadFlashPolicyFile = function(url){
+    WebSocket.__addTask(function() {
+      WebSocket.__flash.loadManualPolicyFile(url);
+    });
+  };
+
+  /**
+   * Called by flash to notify js that it's fully loaded and ready
+   * for communication.
+   */
+  WebSocket.__onFlashInitialized = function() {
+    setTimeout(function() {
+      WebSocket.__flash = document.getElementById("webSocketFlash");
+      WebSocket.__flash.setCallerUrl(location.href);
+      WebSocket.__flash.setDebug(!!window.WEB_SOCKET_DEBUG);
+      for (var i = 0; i < WebSocket.__tasks.length; ++i) {
+        WebSocket.__tasks[i]();
+      }
+      WebSocket.__tasks = [];
+    }, 0);
+  };
+
+  /**
+   * Called by flash to dispatch an event to a web socket.
+   * @param {object} eventObj  A web socket event dispatched from flash.
+   */
+  WebSocket.__onFlashEvent = function() {
+    setTimeout(function() {
+      var events = WebSocket.__flash.receiveEvents();
+      for (var i = 0; i < events.length; ++i) {
+        WebSocket.__instances[events[i].webSocketId].__handleEvent(events[i]);
+      }
+    }, 0);
+    return true;
+  };
+
+  WebSocket.__log = function(message) {
+    console.log(decodeURIComponent(message));
+  };
+
+  WebSocket.__error = function(message) {
+    console.error(decodeURIComponent(message));
+  };
+
+  WebSocket.__addTask = function(task) {
+    if (WebSocket.__flash) {
+      task();
+    } else {
+      WebSocket.__tasks.push(task);
+    }
+  };
+
+  /**
+   * Test if the browser is running flash lite.
+   * @return {boolean} True if flash lite is running, false otherwise.
+   */
+  WebSocket.__isFlashLite = function() {
+    if (!window.navigator || !window.navigator.mimeTypes) {
+      return false;
+    }
+    var mimeType = window.navigator.mimeTypes["application/x-shockwave-flash"];
+    if (!mimeType || !mimeType.enabledPlugin || !mimeType.enabledPlugin.filename) {
+      return false;
+    }
+    return mimeType.enabledPlugin.filename.match(/flashlite/i) ? true : false;
+  };
+
+  /**
+   * Basic implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface">DOM 2 EventInterface</a>}
+   *
+   * @class
+   * @constructor
+   */
+  function WebSocketEvent(){}
+
+  /**
+   *
+   * @type boolean
+   */
+  WebSocketEvent.prototype.cancelable = true;
+
+  /**
+  *
+  * @type boolean
+  */
+  WebSocketEvent.prototype.cancelBubble = false;
+
+  /**
+  *
+  * @return void
+  */
+  WebSocketEvent.prototype.preventDefault = function() {
+    if (this.cancelable) {
+      this.returnValue = false;
+    }
+  };
+
+  /**
+  *
+  * @return void
+  */
+  WebSocketEvent.prototype.stopPropagation = function() {
+    this.cancelBubble = true;
+  };
+
+  /**
+  *
+  * @param {string} eventTypeArg
+  * @param {boolean} canBubbleArg
+  * @param {boolean} cancelableArg
+  * @return void
+  */
+  WebSocketEvent.prototype.initEvent = function(eventTypeArg, canBubbleArg, cancelableArg) {
+    this.type = eventTypeArg;
+    this.cancelable = cancelableArg;
+    this.timeStamp = new Date();
+  };
+
+  if (!window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION) {
+    if (window.addEventListener) {
+      window.addEventListener("load", function(){
+        WebSocket.__initialize();
+      }, false);
+    } else {
+      window.attachEvent("onload", function(){
+        WebSocket.__initialize();
+      });
+    }
+  }
+
+})();
+
+if (typeof window != 'undefined'){
+	WEB_SOCKET_SWF_LOCATION = '/WebSocketMain.swf';
+}
+
+var Juggernaut = function(options){
+  this.options = options || {};
+
+  this.host = this.options.host || window.location.hostname;
+  this.port = this.options.port || 8080;
+
+  this.handlers = {};
+  this.state    = "disconnected";
+  this.meta     = this.options.meta;
+
+  this.socket = new io.Socket(this.host,
+    {rememberTransport: false, port: this.port, secure: this.options.secure}
+  );
+
+  this.socket.on("connect",    this.proxy(this.onconnect));
+  this.socket.on("message",    this.proxy(this.onmessage));
+  this.socket.on("disconnect", this.proxy(this.ondisconnect));
+
+  this.on("connect", this.proxy(this.writeMeta));
+};
+
+
+Juggernaut.fn = Juggernaut.prototype;
+Juggernaut.fn.proxy = function(func){
+  var thisObject = this;
+  return(function(){ return func.apply(thisObject, arguments); });
+};
+
+
+Juggernaut.fn.on = function(name, callback){
+  if ( !name || !callback ) return;
+  if ( !this.handlers[name] ) this.handlers[name] = [];
+  this.handlers[name].push(callback);
+};
+Juggernaut.fn.bind = Juggernaut.fn.on;
+
+Juggernaut.fn.write = function(message){
+  if (typeof message.toJSON == "function")
+    message = message.toJSON();
+
+  this.socket.send(message);
+};
+
+Juggernaut.fn.connect = function(){
+  if (this.state == "connected" || this.state == "connecting") return;
+
+  this.state = "connecting";
+  this.socket.connect();
+};
+
+Juggernaut.fn.subscribe = function(channel, callback){
+  if ( !channel ) throw "Must provide a channel";
+
+  this.on(channel + ":data", callback);
+
+  var connectCallback = this.proxy(function(){
+    var message     = new Juggernaut.Message;
+    message.type    = "subscribe";
+    message.channel = channel;
+
+    this.write(message);
+  });
+
+  this.on("connect", connectCallback);
+
+  if (this.state == "connected")
+    connectCallback();
+  else {
+    this.connect();
+  }
+};
+
+Juggernaut.fn.unsubscribe = function(channel) {
+  if ( !channel ) throw "Must provide a channel";
+
+  var message     = new Juggernaut.Message;
+  message.type    = "unsubscribe";
+  message.channel = channel;
+
+  this.write(message);
+};
+
+
+Juggernaut.fn.trigger = function(){
+  var args = [];
+  for (var f=0; f < arguments.length; f++) args.push(arguments[f]);
+
+  var name  = args.shift();
+
+  var callbacks = this.handlers[name];
+  if ( !callbacks ) return;
+
+  for(var i=0, len = callbacks.length; i < len; i++)
+    callbacks[i].apply(this, args);
+};
+
+Juggernaut.fn.writeMeta = function(){
+  if ( !this.meta ) return;
+  var message     = new Juggernaut.Message;
+  message.type    = "meta";
+  message.data    = this.meta;
+  this.write(message);
+};
+
+Juggernaut.fn.onconnect = function(){
+  this.sessionID = this.socket.transport.sessionid;
+  this.state = "connected";
+  this.trigger("connect");
+};
+
+Juggernaut.fn.ondisconnect = function(){
+  this.state = "disconnected";
+  this.trigger("disconnect");
+
+  if ( this.options.reconnect !== false )
+    this.reconnect();
+};
+
+Juggernaut.fn.onmessage = function(data){
+  var message = Juggernaut.Message.fromJSON(data);
+  this.trigger("message", message);
+  this.trigger("data", message.channel, message.data);
+  this.trigger(message.channel + ":data", message.data);
+};
+
+Juggernaut.fn.reconnect = function(){
+  if (this.recInterval) return;
+
+  this.recInterval = setInterval(this.proxy(function(){
+    if (this.state == "connected") {
+      clearInterval(this.recInterval);
+      this.recInterval = null;
+    } else {
+      this.trigger("reconnect");
+      this.connect();
+    }
+  }), 3000);
+}
+
+Juggernaut.Message = function(hash){
+  for (var key in hash) this[key] = hash[key];
+};
+
+Juggernaut.Message.fromJSON = function(json){
+  return(new this(JSON.parse(json)))
+};
+
+Juggernaut.Message.prototype.toJSON = function(){
+  var object = {};
+  for (var key in this) {
+    if (typeof this[key] != "function")
+      object[key] = this[key];
+  }
+  return(JSON.stringify(object));
+};

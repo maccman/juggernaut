@@ -18,5 +18,6 @@
   { "socket.io" : "~0.6.16"
   , "redis" : "~0.5.9"
   , "node-static-maccman" : "~0.5.3"
+  , "optimist": "~0.1.9"
   }
 }
