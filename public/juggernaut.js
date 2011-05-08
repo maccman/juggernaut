@@ -89,6 +89,8 @@ Juggernaut.fn.unsubscribe = function(channel) {
   message.channel = channel;
 
   this.write(message);
+
+  delete this.handlers[channel + ":data"];
 };
 
 // Private
