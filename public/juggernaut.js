@@ -45,6 +45,11 @@ Juggernaut.fn.on = function(name, callback){
 };
 Juggernaut.fn.bind = Juggernaut.fn.on;
 
+Juggernaut.fn.unbind = function(name){
+  if (!this.handlers) return;
+  delete this.handlers[name];
+};
+
 Juggernaut.fn.write = function(message){
   if (typeof message.toJSON == "function")
     message = message.toJSON();
@@ -83,6 +88,8 @@ Juggernaut.fn.subscribe = function(channel, callback){
 
 Juggernaut.fn.unsubscribe = function(channel) {
   if ( !channel ) throw "Must provide a channel";
+  
+  this.unbind(channel + ":data");
   
   var message     = new Juggernaut.Message;
   message.type    = "unsubscribe";
