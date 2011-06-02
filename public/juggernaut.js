@@ -17,7 +17,7 @@ var Juggernaut = function(options){
   this.state    = "disconnected";
   this.meta     = this.options.meta;
 
-  this.socket = new io.Socket(this.options);
+  this.socket = new io.Socket(this.options.host, this.options);
 
   this.socket.on("connect",    this.proxy(this.onconnect));
   this.socket.on("message",    this.proxy(this.onmessage));
