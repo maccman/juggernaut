@@ -8,8 +8,16 @@ module Juggernaut
     "juggernaut:custom"
   ]
   
-  def redis_options
-    @redis_options ||= {}
+  def options
+    @options ||= {}
+  end
+  
+  def options=(val)
+    @options = val
+  end
+  
+  def url=(url)
+    options[:url] = url
   end
   
   def publish(channels, data, options = {})
@@ -27,7 +35,7 @@ module Juggernaut
   
   protected
     def redis
-      @redis ||= Redis.new(redis_options)
+      @redis ||= Redis.connect(options)
     end
   
     def key(*args)
