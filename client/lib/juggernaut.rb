@@ -26,7 +26,7 @@ module Juggernaut
   end
   
   def subscribe
-    Redis.new(redis_options).subscribe(*EVENTS) do |on|
+    Redis.new(options).subscribe(*EVENTS) do |on|
       on.message do |type, msg|
         yield(type.gsub(/^juggernaut:/, "").to_sym, JSON.parse(msg))
       end
