@@ -64,7 +64,7 @@ Or follow the [Redis build instructions](http://redis.io/download)
 
 Juggernaut is distributed by [npm](http://npmjs.org), you'll need to [install that](http://npmjs.org) first if you haven't already.
 
-    npm install juggernaut
+    npm install -g juggernaut
 
 ###Install the [Juggernaut client gem](http://rubygems.org/gems/juggernaut)
 
