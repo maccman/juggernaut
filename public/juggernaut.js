@@ -3,10 +3,6 @@
 //= require <json>
 //= require <socket_io>
 
-if (typeof window != 'undefined'){
-	WEB_SOCKET_SWF_LOCATION = '/WebSocketMain.swf';
-}
-
 var Juggernaut = function(options){
   this.options = options || {};
   
@@ -14,14 +10,13 @@ var Juggernaut = function(options){
   this.options.port = this.options.port || 8080;
   
   this.handlers = {};
-  this.state    = "disconnected";
   this.meta     = this.options.meta;
 
-  this.socket = new io.Socket(this.options.host, this.options);
+  this.io = io.connect(this.options.host, this.options);
 
-  this.socket.on("connect",    this.proxy(this.onconnect));
-  this.socket.on("message",    this.proxy(this.onmessage));
-  this.socket.on("disconnect", this.proxy(this.ondisconnect));
+  this.io.on("connect",    this.proxy(this.onconnect));
+  this.io.on("message",    this.proxy(this.onmessage));
+  this.io.on("disconnect", this.proxy(this.ondisconnect));
 
   this.on("connect", this.proxy(this.writeMeta));
 };
@@ -52,14 +47,7 @@ Juggernaut.fn.write = function(message){
   if (typeof message.toJSON == "function")
     message = message.toJSON();
 
-  this.socket.send(message);
-};
-
-Juggernaut.fn.connect = function(){
-  if (this.state == "connected" || this.state == "connecting") return;
-
-  this.state = "connecting";
-  this.socket.connect();
+  this.io.send(message);
 };
 
 Juggernaut.fn.subscribe = function(channel, callback){
@@ -75,12 +63,10 @@ Juggernaut.fn.subscribe = function(channel, callback){
     this.write(message);
   });
 
-  this.on("connect", connectCallback);
-
-  if (this.state == "connected")
+  if (this.io.socket.connected)
     connectCallback();
   else {
-    this.connect();
+    this.on("connect", connectCallback);
   }
 };
 
@@ -120,17 +106,12 @@ Juggernaut.fn.writeMeta = function(){
 };
 
 Juggernaut.fn.onconnect = function(){
-  this.sessionID = this.socket.transport.sessionid;
-  this.state = "connected";
+  this.sessionID = this.io.socket.sessionid;
   this.trigger("connect");
 };
 
 Juggernaut.fn.ondisconnect = function(){
-  this.state = "disconnected";
   this.trigger("disconnect");
-
-  if ( this.options.reconnect !== false )
-    this.reconnect();
 };
 
 Juggernaut.fn.onmessage = function(data){
@@ -139,20 +120,6 @@ Juggernaut.fn.onmessage = function(data){
   this.trigger("data", message.channel, message.data);
   this.trigger(message.channel + ":data", message.data);
 };
-
-Juggernaut.fn.reconnect = function(){
-  if (this.recInterval) return;
-
-  this.recInterval = setInterval(this.proxy(function(){
-    if (this.state == "connected") {
-      clearInterval(this.recInterval);
-      this.recInterval = null;      
-    } else {
-      this.trigger("reconnect");
-      this.connect();
-    }
-  }), 3000);
-}
 
 Juggernaut.Message = function(hash){
   for (var key in hash) this[key] = hash[key];
