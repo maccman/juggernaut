@@ -1,4 +1,4 @@
-/*! Socket.IO.js build:0.7.9, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
+/*! Socket.IO.js build:0.7.11, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
 
 /**
  * socket.io
@@ -22,7 +22,7 @@
    * @api public
    */
 
-  io.version = '0.7.9';
+  io.version = '0.7.11';
 
   /**
    * Protocol implemented.
@@ -1675,6 +1675,8 @@
       );
 
       function connect (transports){
+        if (self.transport) self.transport.clearTimeouts();
+
         self.transport = self.getTransport(transports);
         if (!self.transport) return self.publish('connect_failed');
 
@@ -3690,4 +3692,3 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
     'undefined' != typeof io ? io.Transport : module.exports
   , 'undefined' != typeof io ? io : module.parent.exports
 );
-
