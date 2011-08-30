@@ -1,4 +1,4 @@
-/*! Socket.IO.js build:0.7.11, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
+/*! Socket.IO.js build:0.8.2, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
 
 /**
  * socket.io
@@ -22,7 +22,7 @@
    * @api public
    */
 
-  io.version = '0.7.11';
+  io.version = '0.8.2';
 
   /**
    * Protocol implemented.
@@ -2241,6 +2241,16 @@
   exports.websocket = WS;
 
   /**
+   * Detect WebSocket implementation.
+   */
+
+  function detectWebSocket () {
+    if (typeof window != 'undefined') {
+      return window.WebSocket || window.MozWebSocket;
+    }
+  }
+
+  /**
    * The WebSocket transport uses the HTML5 WebSocket API to establish an
    * persistent connection with the Socket.IO server. This transport will also
    * be inherited by the FlashSocket fallback as it provides a API compatible
@@ -2281,7 +2291,7 @@
     var self = this
       , query = io.util.query(this.socket.options.query);
 
-    this.websocket = new WebSocket(this.prepareUrl() + query);
+    this.websocket = new (detectWebSocket())(this.prepareUrl() + query);
 
     var self = this;
     this.websocket.onopen = function () {
@@ -2370,7 +2380,8 @@
    */
 
   WS.check = function () {
-    return 'WebSocket' in window && !('__addTask' in WebSocket);
+    var WebSocket = detectWebSocket();
+    return WebSocket && !WebSocket.__addTask;
   };
 
   /**
@@ -2391,7 +2402,6 @@
    */
 
   io.transports.push('websocket');
-
 
 })(
     'undefined' != typeof io ? io.Transport : module.exports
@@ -3692,3 +3702,4 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
     'undefined' != typeof io ? io.Transport : module.exports
   , 'undefined' != typeof io ? io : module.parent.exports
 );
+
