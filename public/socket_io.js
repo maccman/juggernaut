@@ -1,4 +1,4 @@
-/*! Socket.IO.js build:0.8.2, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
+/*! Socket.IO.js build:0.8.3, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
 
 /**
  * socket.io
@@ -22,7 +22,7 @@
    * @api public
    */
 
-  io.version = '0.8.2';
+  io.version = '0.8.3';
 
   /**
    * Protocol implemented.
@@ -1122,7 +1122,7 @@
    * @api private
    */
 
-  var regexp = /^([^:]+):([0-9]+)?(\+)?:([^:]+)?:?(.*)?$/;
+  var regexp = /([^:]+):([0-9]+)?(\+)?:([^:]+)?:?([\s\S]*)?/;
 
   parser.decodePacket = function (data) {
     var pieces = data.match(regexp);
@@ -1503,6 +1503,7 @@
       , 'max reconnection attempts': 10
       , 'sync disconnect on unload': true
       , 'auto connect': true
+      , 'flash policy port': 10843
     };
 
     io.util.merge(this.options, options);
@@ -1602,7 +1603,7 @@
 
     if (this.isXDomain()) {
       var insertAt = document.getElementsByTagName('script')[0]
-        , script = document.createElement('SCRIPT');
+        , script = document.createElement('script');
 
       script.src = url + '&jsonp=' + io.j.length;
       insertAt.parentNode.insertBefore(script, insertAt);
@@ -1805,8 +1806,10 @@
 
   Socket.prototype.isXDomain = function () {
 
-    var locPort = window.location.port || 80;
-    return this.options.host !== document.domain || this.options.port != locPort;
+    var port = window.location.port ||
+      ('https:' == window.location.protocol ? 443 : 80);
+
+    return this.options.host !== document.domain || this.options.port != port;
   };
 
   /**
@@ -2241,16 +2244,6 @@
   exports.websocket = WS;
 
   /**
-   * Detect WebSocket implementation.
-   */
-
-  function detectWebSocket () {
-    if (typeof window != 'undefined') {
-      return window.MozWebSocket || window.WebSocket;
-    }
-  }
-
-  /**
    * The WebSocket transport uses the HTML5 WebSocket API to establish an
    * persistent connection with the Socket.IO server. This transport will also
    * be inherited by the FlashSocket fallback as it provides a API compatible
@@ -2288,12 +2281,17 @@
    */
 
   WS.prototype.open = function () {
-    var self = this
-      , query = io.util.query(this.socket.options.query);
+    var query = io.util.query(this.socket.options.query)
+      , self = this
+      , Socket
 
-    this.websocket = new (detectWebSocket())(this.prepareUrl() + query);
 
-    var self = this;
+    if (!Socket) {
+      Socket = window.MozWebSocket || window.WebSocket;
+    }
+
+    this.websocket = new Socket(this.prepareUrl() + query);
+
     this.websocket.onopen = function () {
       self.onOpen();
       self.socket.setBuffer(false);
@@ -2380,8 +2378,8 @@
    */
 
   WS.check = function () {
-    var WebSocket = detectWebSocket();
-    return WebSocket && !WebSocket.__addTask;
+    return ('WebSocket' in window && !('__addTask' in WebSocket))
+          || 'MozWebSocket' in window;
   };
 
   /**
@@ -2453,7 +2451,7 @@
   Flashsocket.prototype.name = 'flashsocket';
 
   /**
-   *Disconnect the established `FlashSocket` connection. This is done by adding a 
+   * Disconnect the established `FlashSocket` connection. This is done by adding a 
    * new task to the FlashSocket. The rest will be handled off by the `WebSocket` 
    * transport.
    *
@@ -2514,6 +2512,7 @@
   Flashsocket.prototype.ready = function (socket, fn) {
     function init () {
       var options = socket.options
+        , port = options['flash policy port']
         , path = [
               'http' + (options.secure ? 's' : '') + ':/'
             , options.host + ':' + options.port
@@ -2528,6 +2527,10 @@
         if (typeof WEB_SOCKET_SWF_LOCATION === 'undefined') {
           // Set the correct file based on the XDomain settings
           WEB_SOCKET_SWF_LOCATION = path.join('/');
+        }
+
+        if (port !== 843) {
+          WebSocket.loadFlashPolicyFile('xmlsocket://' + options.host + ':' + port);
         }
 
         WebSocket.__initialize();
@@ -2558,7 +2561,7 @@
       || !('__initialize' in WebSocket) || !swfobject
     ) return false;
 
-    return swfobject.getFlashPlayerVersion().major >= 1;
+    return swfobject.getFlashPlayerVersion().major >= 10;
   };
 
   /**
@@ -3555,8 +3558,8 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
         );
 
     if (!this.form) {
-      var form = document.createElement('FORM')
-        , area = document.createElement('TEXTAREA')
+      var form = document.createElement('form')
+        , area = document.createElement('textarea')
         , id = this.iframeId = 'socketio_iframe_' + this.index
         , iframe;
 
@@ -3631,7 +3634,7 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
 
   JSONPPolling.prototype.get = function () {
     var self = this
-      , script = document.createElement('SCRIPT')
+      , script = document.createElement('script')
       , query = io.util.query(
              this.socket.options.query
           , 't='+ (+new Date) + '&i=' + this.index
@@ -3702,4 +3705,3 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
     'undefined' != typeof io ? io.Transport : module.exports
   , 'undefined' != typeof io ? io : module.parent.exports
 );
-
