@@ -1,4 +1,5 @@
 daemon.node/
 lib/daemon.node
 keys
+node_modules
 
