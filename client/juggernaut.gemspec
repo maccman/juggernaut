@@ -22,7 +22,11 @@ Gem::Specification.new do |s|
      "examples/juggernaut_observer.rb",
      "examples/roster.rb",
      "juggernaut.gemspec",
-     "lib/juggernaut.rb"
+     "lib/juggernaut.rb",
+     "lib/juggernaut/rails/engine.rb",
+     "vendor/assets/javascripts/juggernaut.js",
+     "vendor/assets/javascripts/json.js",
+     "vendor/assets/javascripts/socket_io.js"
   ]
   s.homepage = %q{http://github.com/maccman/juggernaut}
   s.rdoc_options = ["--charset=UTF-8"]

@@ -1,7 +1,7 @@
 // For sprockets:
 //
-//= require <json>
-//= require <socket_io>
+//= require json
+//= require socket_io
 
 var Juggernaut = function(options){
   this.options = options || {};
