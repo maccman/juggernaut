@@ -1,6 +1,9 @@
 require "redis"
 require "json"
 
+# Attempt to provide Engine to Rails
+require "juggernaut/rails/engine"
+
 module Juggernaut
   EVENTS = [
     "juggernaut:subscribe", 
