@@ -3,9 +3,7 @@
 <head>
   <meta name="charset" content="utf-8">
   <title>Juggernaut</title>
-  <script src="json.js" type="text/javascript" charset="utf-8"></script>
-  <script src="socket_io.js" type="text/javascript" charset="utf-8"></script>
-  <script src="juggernaut.js" type="text/javascript" charset="utf-8"></script>
+  <script src="application.js" type="text/javascript" charset="utf-8"></script>
   
   <style type="text/css" media="screen">
     h1 {
@@ -48,9 +46,6 @@
     jug.subscribe("channel1", function(data){
       log("Got data: " + data);
     });
-    
-    // Expose for debugging
-    window.jug = jug;
   </script>
 </body>
 </html>
