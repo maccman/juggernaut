@@ -1,4 +1,3 @@
-//= require json
 //= require socket_io
 
 var Juggernaut = function(options){
