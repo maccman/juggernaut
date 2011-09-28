@@ -1,5 +1,3 @@
-// For sprockets:
-//
 //= require json
 //= require socket_io
 
@@ -137,3 +135,6 @@ Juggernaut.Message.prototype.toJSON = function(){
   }
   return(JSON.stringify(object));
 };
+
+if (typeof module != "undefined")
+  module.exports = Juggernaut;
