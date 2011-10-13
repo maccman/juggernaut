@@ -392,6 +392,48 @@ So, as to the JavaScript side to the observer, we need to subscribe to a observe
     var jug = new Juggernaut;
     jug.subscribe("/observer/" + user_id, process);
 
+##Security
+By default anyone can subscribe to any channel. If it's ok for you, just skip this section and everything will work as expected.
+
+If the security is a problem we provide an easy solution: signatures, which means that when a client wants to subscribe to a channel must provide a signature and a timestamp:
+
+	jug.subscribe(current_room, function(data) {
+		console.log("Got data: " + data);
+	}, signature, timestamp);
+
+This signature is just a string, encrypted in SHA1, generated from a secret token, the name of the channel we want to subscribe to and a timestamp separated by `:`. That means something like this: `token:channelName:timestamp`. In Ruby it's very easy to generate a proper signature:
+
+	timestamp = (Time.now.to_f * 1000).round
+
+	pre_signature = [SHARED_TOKEN, channel_name, timestamp].join(':')
+
+	signature = Digest::SHA1.hexdigest(pre_signature)
+
+
+The token should be saved separately on the server and the client. The timestamp and the signature are required when we subscribe to a channel if we activate the secure mode.
+
+In order to activate it, we should add the `-s` or `--security` option and a path of a file when we start Juggernaut.
+
+That file must follow this format:
+
+	var Config = {
+		// Token shared with the server. Required, since it's not defined by default
+		sharedToken: 'juggernautrocks',
+
+		// Time until a signatures expires, in seconds. Optional, 40 seconds by default
+		expiration: 40,
+	};
+
+	module.exports = Config;
+
+Now we can start Juggernaut with:
+
+	$ juggernaut --security 'path/to/file.js'
+
+Or:
+
+	$ juggernaut -s 'path/to/file.js'
+			
 ##Full examples
 
 You can see the full examples inside [Holla](http://github.com/maccman/holla), specifically [roster.rb](https://github.com/maccman/holla/blob/original/app/models/roster.rb),  [juggernaut_observer.rb](https://github.com/maccman/holla/blob/original/app/observers/juggernaut_observer.rb) and [application.juggernaut.js](https://github.com/maccman/holla/blob/original/app/javascripts/application.juggernaut.js).
