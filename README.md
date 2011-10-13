@@ -225,7 +225,7 @@ Now, the original client won't get the duplicated chat message, even if it's sub
 
 ##Singleton subscription
 
-Sometime you need to have only one subscription to a channel, regardless the number of times you call `subscribe`. It may be useful when you subscribe in an AJAX callback.
+Sometime you need to have only one subscription to a channel, regardless the number of times you call `subscribe`. It may be useful when you subscribe in an AJAX callback. To do so, you can use `singleSubscribe`.
 
 jQuery('.user a.follow').live('click', function(event){
   jQuery.post(this.href, function(data, status, xhr){
