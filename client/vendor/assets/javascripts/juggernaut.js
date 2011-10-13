@@ -6,8 +6,9 @@ var Juggernaut = function(options){
   this.options.host = this.options.host || window.location.hostname;
   this.options.port = this.options.port || 8080;
   
-  this.handlers = {};
-  this.meta     = this.options.meta;
+  this.subscriptions = {};
+  this.handlers      = {};
+  this.meta          = this.options.meta;
 
   this.io = io.connect(this.options.host, this.options);
 
@@ -67,8 +68,19 @@ Juggernaut.fn.subscribe = function(channel, callback){
   }
 };
 
+Juggernaut.fn.singleSubscribe = function(channel, callback){
+  if ( this.subscriptions[channel] ) return false;
+  else {
+    this.subscribe(channel, callback);
+    return(this.subscriptions[channel] = true);
+  }
+};
+
 Juggernaut.fn.unsubscribe = function(channel) {
   if ( !channel ) throw "Must provide a channel";
+  
+  if ( this.subscriptions[channel] ) 
+    this.subscriptions[channel] = false;
   
   this.unbind(channel + ":data");
   
