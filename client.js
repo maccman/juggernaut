@@ -3206,10 +3206,10 @@
 
 var Juggernaut = function(options){
   this.options = options || {};
-
+  
   this.options.host = this.options.host || window.location.hostname;
   this.options.port = this.options.port || 8080;
-
+  
   this.handlers = {};
   this.meta     = this.options.meta;
 
@@ -3273,9 +3273,9 @@ Juggernaut.fn.subscribe = function(channel, callback){
 
 Juggernaut.fn.unsubscribe = function(channel) {
   if ( !channel ) throw "Must provide a channel";
-
+  
   this.unbind(channel + ":data");
-
+  
   var message     = new Juggernaut.Message;
   message.type    = "unsubscribe";
   message.channel = channel;
@@ -3288,7 +3288,7 @@ Juggernaut.fn.unsubscribe = function(channel) {
 Juggernaut.fn.trigger = function(){
   var args = [];
   for (var f=0; f < arguments.length; f++) args.push(arguments[f]);
-
+  
   var name  = args.shift();
 
   var callbacks = this.handlers[name];
