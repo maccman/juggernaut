@@ -2,6 +2,8 @@
 var argv = require("optimist").argv,
     util = require("util");
 
+var logger = require("./lib/juggernaut/logger");
+
 var help = [
     "usage: juggernaut [options] ",
     "",
@@ -16,6 +18,8 @@ var help = [
 if (argv.h || argv.help) {
   return util.puts(help);
 }
+
+logger.silent = argv.silent;
 
 Juggernaut = require("./index");
 Juggernaut.listen(argv.port);
