@@ -225,6 +225,22 @@ Now, when we publish to a channel, we can pass the `:except` option, with the cu
     
 Now, the original client won't get the duplicated chat message, even if it's subscribed to the __/chat__ channel.
 
+##Singleton subscription
+
+Sometime you need to have only one subscription to a channel, regardless the number of times you call `subscribe`. It may be useful when you subscribe in an AJAX callback. To do so, you can use `singleSubscribe`.
+
+jQuery('.user a.follow').live('click', function(event){
+  jQuery.post(this.href, function(data, status, xhr){
+    var channel = "users/" + data.user.id + "/feed";
+    juggernaut.singleSubscribe(channel, function(feedEntry){
+      console.log("Got new feed entry: " + feedEntry);
+    }
+  });
+});
+
+Even if the user click many times to follow an user, each new messages of this users's feed will be pushed to the client only once.
+
+
 ##Server Events
 
 When a client connects & disconnects, Juggernaut triggers a callback. You can listen to these callbacks from the Ruby client,
